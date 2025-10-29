@@ -1,6 +1,7 @@
 <?php
 
 use function Livewire\Volt\{state, mount};
+use App\Services\SurveyQuestions;
 
 // 結果画面の状態を定義
 state([
@@ -8,16 +9,7 @@ state([
     'careLevel' => '',
     'careTime' => 0,
     'questions' => [],
-    'groups' => [
-        1 => '第1群　基本動作・起居動作機能の変化',
-        2 => '第2群　生活機能（ADL・IADL）',
-        3 => '第3群　認知機能（記憶・意思疎通）',
-        4 => '第4群　社会的行動の評価',
-        5 => '第5群　社会生活適応に関する評価',
-        6 => '第6群　特別な医療行為',
-        7 => '日常生活自立度（調査員）',
-        8 => '主治医意見書（調査員）',
-    ],
+    'groups' => SurveyQuestions::getGroups(),
 ]);
 
 // マウント時に入力データを受け取る
@@ -43,61 +35,24 @@ mount(function ($input = null) {
     }
 });
 
-// 要介護認定基準時間を算出する（仮の実装）
+// 要介護認定基準時間を算出する
 $calculateCareTime = function () {
-    // 実際には複雑なアルゴリズムで計算する
-    // ここでは仮の実装として回答数に応じて時間を設定
-    $baseTime = 30; // 基本時間（分）
-    $additionalTimePerAnswer = 2; // 回答1つあたりの追加時間（分）
-
-    $this->careTime = $baseTime + count($this->answers) * $additionalTimePerAnswer;
+    // CareTimeLogicサービスを利用して要介護認定基準時間を算出
+    $careTimeLogic = new \App\Services\CareTimeLogic();
+    $this->careTime = $careTimeLogic->calculateCareTime($this->answers);
 };
 
 // 要介護度を判定する
 $determineCareLevel = function () {
-    // 実際には認定基準時間に基づいて判定する
-    // ここでは仮の実装
-    if ($this->careTime < 32) {
-        $this->careLevel = '自立';
-    } elseif ($this->careTime < 50) {
-        $this->careLevel = '要支援1';
-    } elseif ($this->careTime < 70) {
-        $this->careLevel = '要支援2';
-    } elseif ($this->careTime < 90) {
-        $this->careLevel = '要介護1';
-    } elseif ($this->careTime < 110) {
-        $this->careLevel = '要介護2';
-    } elseif ($this->careTime < 130) {
-        $this->careLevel = '要介護3';
-    } elseif ($this->careTime < 150) {
-        $this->careLevel = '要介護4';
-    } else {
-        $this->careLevel = '要介護5';
-    }
+    // CareTimeLogicサービスを利用して要介護度を判定
+    $careTimeLogic = new \App\Services\CareTimeLogic();
+    $this->careLevel = $careTimeLogic->determineCareLevel($this->careTime);
 };
 
-// 質問データを読み込む（本来はデータベースから取得するべき）
+// 質問データを読み込む
 $loadQuestions = function () {
-    // 入力画面と同じ質問データを使用（本来は共通のサービスから取得するべき）
-    $this->questions = [
-        // 第1群
-        '1-1' => [
-            'title' => '麻痺',
-            'options' => ['左上肢', '右上肢', '左下肢', '右下肢', 'その他（四肢欠損）'],
-            'type' => 'checkbox',
-        ],
-        '1-2' => [
-            'title' => '拘縮',
-            'options' => ['肩関節', '股関節', '膝関節', 'その他（四肢欠損）'],
-            'type' => 'checkbox',
-        ],
-        '1-3' => [
-            'title' => '寝返り',
-            'options' => ['つかまらないでできる', '何かにつかまればできる', 'できない'],
-            'type' => 'radio',
-        ],
-        // 以下省略（実際には全ての質問を含める）
-    ];
+    // 共通サービスから質問データを取得
+    $this->questions = SurveyQuestions::getAllQuestions();
 };
 
 // 入力画面に戻る
@@ -123,6 +78,43 @@ $backToInput = function () {
                     <p class="text-center text-gray-600 mt-2">
                         要介護認定基準時間: {{ $this->careTime }}分
                     </p>
+                    @php
+                        $careTimeLogic = new \App\Services\CareTimeLogic();
+                        $intermediateScore = $careTimeLogic->calculateIntermediateScore($this->answers);
+                        $physicalScore = $careTimeLogic->calculatePhysicalFunctionScore($this->answers);
+                        $lifeScore = $careTimeLogic->calculateLifeFunctionScore($this->answers);
+                        $cognitiveScore = $careTimeLogic->calculateCognitiveFunctionScore($this->answers);
+                        $mentalScore = $careTimeLogic->calculateMentalBehaviorDisorderScore($this->answers);
+                        $socialScore = $careTimeLogic->calculateSocialAdaptationScore($this->answers);
+                    @endphp
+                    <p class="text-center text-gray-600 mt-1">
+                        中間得点: {{ number_format($intermediateScore, 1) }}点
+                    </p>
+                    <div class="mt-3 p-2 bg-white rounded-lg border border-gray-200">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2 text-center">群別中間得点</h4>
+                        <div class="grid grid-cols-1 gap-2 text-sm">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">第1群（身体機能・起居動作）:</span>
+                                <span class="font-medium text-gray-600">{{ number_format($physicalScore, 1) }}点</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">第2群（生活機能）:</span>
+                                <span class="font-medium text-gray-600">{{ number_format($lifeScore, 1) }}点</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">第3群（認知機能）:</span>
+                                <span class="font-medium text-gray-600">{{ number_format($cognitiveScore, 1) }}点</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">第4群（精神・行動障害）:</span>
+                                <span class="font-medium text-gray-600">{{ number_format($mentalScore, 1) }}点</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">第5群（社会生活への適応）:</span>
+                                <span class="font-medium text-gray-600">{{ number_format($socialScore, 1) }}点</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 要介護度の帯グラフ -->
