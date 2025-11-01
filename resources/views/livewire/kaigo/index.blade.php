@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 // 状態定義
 state([
     'inputs' => [],
-    'showFilters' => false,
+    'showFilterModal' => false,
     'filters' => [
         'status' => null,
         'care_level' => null,
@@ -55,15 +55,10 @@ mount(function () {
     $this->loadInputs();
 });
 
-// フィルターの表示/非表示を切り替える
-$toggleFilters = function () {
-    $this->showFilters = !$this->showFilters;
-};
-
 // フィルターを適用する
 $applyFilters = function () {
     $this->loadInputs();
-    $this->showFilters = false;
+    $this->showFilterModal = false;
 };
 
 // フィルターをリセットする
@@ -75,7 +70,17 @@ $resetFilters = function () {
         'created_to' => null,
     ];
     $this->loadInputs();
-    $this->showFilters = false;
+    $this->showFilterModal = false;
+};
+
+// フィルターモーダルを開く
+$openFilterModal = function () {
+    $this->showFilterModal = true;
+};
+
+// フィルターモーダルを閉じる
+$closeFilterModal = function () {
+    $this->showFilterModal = false;
 };
 
 // 進捗率を計算するcomputed関数
@@ -141,7 +146,7 @@ $deleteInput = function ($id) {
                     要介護度算出アプリ
                 </h2>
                 <div class="flex gap-2">
-                    <button wire:click="toggleFilters"
+                    <button wire:click="openFilterModal"
                         class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
                         フィルター
                     </button>
@@ -156,66 +161,6 @@ $deleteInput = function ($id) {
             @if (session()->has('message'))
                 <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
                     {{ session('message') }}
-                </div>
-            @endif
-
-            <!-- フィルターエリア -->
-            @if ($showFilters)
-                <div class="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">フィルター</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <!-- 進捗状況 -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">進捗状況</label>
-                            <select wire:model="filters.status"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">すべて</option>
-                                <option value="draft">一時保存</option>
-                                <option value="completed">完了</option>
-                            </select>
-                        </div>
-
-                        <!-- 要介護度 -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">要介護度</label>
-                            <select wire:model="filters.care_level"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">すべて</option>
-                                <option value="非該当">非該当</option>
-                                <option value="要支援1">要支援1</option>
-                                <option value="要支援2・要介護1">要支援2・要介護1</option>
-                                <option value="要介護2">要介護2</option>
-                                <option value="要介護3">要介護3</option>
-                                <option value="要介護4">要介護4</option>
-                                <option value="要介護5">要介護5</option>
-                            </select>
-                        </div>
-
-                        <!-- 作成日時（開始） -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">作成日時（開始）</label>
-                            <input type="date" wire:model="filters.created_from"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        </div>
-
-                        <!-- 作成日時（終了） -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">作成日時（終了）</label>
-                            <input type="date" wire:model="filters.created_to"
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        </div>
-                    </div>
-
-                    <div class="flex gap-2 mt-4">
-                        <button wire:click="applyFilters"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                            適用
-                        </button>
-                        <button wire:click="resetFilters"
-                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
-                            リセット
-                        </button>
-                    </div>
                 </div>
             @endif
 
@@ -312,6 +257,87 @@ $deleteInput = function ($id) {
                     </a>
                 </div>
             @endif
+        </div>
+    </div>
+
+    <!-- フィルターモーダル -->
+    <div class="fixed inset-0 z-10 flex items-center justify-center transition-opacity" x-data="{ show: @entangle('showFilterModal') }"
+        x-show="show" x-cloak x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" wire:click="closeFilterModal"
+        style="background-color: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px);">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 transform transition-all"
+            x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" @click.stop>
+            <div class="p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">フィルター</h3>
+                    <button wire:click="closeFilterModal" type="button"
+                        class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none">
+                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 進捗状況 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">進捗状況</label>
+                        <select wire:model="filters.status"
+                            class="w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-white focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">すべて</option>
+                            <option value="draft">一時保存</option>
+                            <option value="completed">完了</option>
+                        </select>
+                    </div>
+
+                    <!-- 要介護度 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">要介護度</label>
+                        <select wire:model="filters.care_level"
+                            class="w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-white focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">すべて</option>
+                            <option value="非該当">非該当</option>
+                            <option value="要支援1">要支援1</option>
+                            <option value="要支援2・要介護1">要支援2・要介護1</option>
+                            <option value="要介護2">要介護2</option>
+                            <option value="要介護3">要介護3</option>
+                            <option value="要介護4">要介護4</option>
+                            <option value="要介護5">要介護5</option>
+                        </select>
+                    </div>
+
+                    <!-- 作成日時（開始） -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">作成日時（開始）</label>
+                        <input type="date" wire:model="filters.created_from"
+                            class="w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-white focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+
+                    <!-- 作成日時（終了） -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">作成日時（終了）</label>
+                        <input type="date" wire:model="filters.created_to"
+                            class="w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-white focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-3 flex justify-end gap-2">
+                <button wire:click="resetFilters" type="button"
+                    class="px-4 py-2 bg-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    リセット
+                </button>
+                <button wire:click="applyFilters" type="button"
+                    class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    適用
+                </button>
+            </div>
         </div>
     </div>
 </div>
