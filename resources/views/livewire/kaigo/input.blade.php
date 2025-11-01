@@ -217,6 +217,8 @@ $saveDraft = function () {
         $data = [
             'answers' => $this->answers,
             'status' => 'draft',
+            'care_time' => null, // 一時保存時は要介護認定基準時間を保存しない
+            'care_level' => null, // 一時保存時は要介護度を保存しない
             'user_id' => Auth::id(),
         ];
 
@@ -291,9 +293,16 @@ $showResult = function () {
 
     // まず回答データを保存（結果画面を表示するので完了状態にする）
     try {
+        // 要介護認定基準時間と要介護度を計算
+        $careTimeLogic = new \App\Services\CareTimeLogic();
+        $careTime = $careTimeLogic->calculateCareTime($this->answers);
+        $careLevel = $careTimeLogic->determineCareLevel($careTime);
+
         $data = [
             'answers' => $this->answers,
             'status' => 'completed', // 結果画面を表示するので完了状態にする
+            'care_time' => $careTime, // 要介護認定基準時間を保存
+            'care_level' => $careLevel, // 要介護度を保存
             'user_id' => Auth::id(),
         ];
 

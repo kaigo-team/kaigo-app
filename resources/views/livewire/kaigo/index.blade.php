@@ -233,26 +233,6 @@ $deleteInput = function ($id) {
 
                                 <!-- 情報 -->
                                 <div class="space-y-1 mb-4">
-                                    <div class="text-sm text-gray-600">
-                                        <span class="font-medium">作成日時:</span>
-                                        {{ $input->created_at ? $input->created_at->format('Y/m/d H:i') : '-' }}
-                                    </div>
-                                    <div class="text-sm text-gray-600">
-                                        <span class="font-medium">更新日時:</span>
-                                        {{ $input->updated_at ? $input->updated_at->format('Y/m/d H:i') : '-' }}
-                                    </div>
-                                    @if ($input->care_level)
-                                        <div class="text-sm">
-                                            <span class="font-medium text-gray-600">要介護度:</span>
-                                            <span
-                                                class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">{{ $input->care_level }}</span>
-                                        </div>
-                                    @endif
-                                    @if ($input->care_time)
-                                        <div class="text-sm text-gray-600">
-                                            <span class="font-medium">要介護認定基準時間:</span> {{ $input->care_time }}分
-                                        </div>
-                                    @endif
                                     <div class="text-sm">
                                         <span class="font-medium text-gray-600">進捗状況:</span>
                                         @if ($input->status === 'completed')
@@ -262,6 +242,31 @@ $deleteInput = function ($id) {
                                             <span
                                                 class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">一時保存</span>
                                         @endif
+                                    </div>
+
+                                    @if ($input->status === 'completed')
+                                        @if ($input->care_level)
+                                            <div class="text-sm">
+                                                <span class="font-medium text-gray-600">要介護度:</span>
+                                                <span
+                                                    class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">{{ $input->care_level }}</span>
+                                            </div>
+                                        @endif
+                                        @if ($input->care_time)
+                                            <div class="text-sm text-gray-600">
+                                                <span class="font-medium">要介護認定基準時間:</span> {{ $input->care_time }}分
+                                            </div>
+                                        @endif
+                                    @endif
+
+
+                                    <div class="text-xs text-gray-600">
+                                        <span class="font-light">作成日時:</span>
+                                        {{ $input->created_at ? $input->created_at->format('Y/m/d H:i') : '-' }}
+                                    </div>
+                                    <div class="text-xs text-gray-600">
+                                        <span class="font-light">更新日時:</span>
+                                        {{ $input->updated_at ? $input->updated_at->format('Y/m/d H:i') : '-' }}
                                     </div>
                                 </div>
 
@@ -274,7 +279,7 @@ $deleteInput = function ($id) {
                                     @php
                                         $progressPercentage = $this->getProgressPercentage($input);
                                     @endphp
-                                    @if ($progressPercentage >= 100)
+                                    @if ($input->status === 'completed')
                                         <button wire:click="viewResult({{ $input->id }})"
                                             class="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
                                             結果を見る
