@@ -10,10 +10,14 @@ state([
     'careTime' => 0,
     'questions' => [],
     'groups' => SurveyQuestions::getGroups(),
+    'inputId' => null,
 ]);
 
 // マウント時に入力データを受け取る
 mount(function ($input = null) {
+    // クエリパラメータからidを取得（入力画面から結果画面に遷移した場合に対応）
+    $this->inputId = request()->query('id');
+
     if ($input) {
         try {
             $this->answers = json_decode(urldecode($input), true) ?? [];
@@ -57,7 +61,18 @@ $loadQuestions = function () {
 
 // 入力画面に戻る
 $backToInput = function () {
-    $this->redirect(route('kaigo.input'));
+    // inputIdがある場合は、編集画面に遷移して入力内容を反映
+    if ($this->inputId) {
+        $this->redirect(route('kaigo.input.edit', ['id' => $this->inputId]));
+    } else {
+        // inputIdがない場合は、新規作成画面に遷移
+        $this->redirect(route('kaigo.input'));
+    }
+};
+
+// 一覧画面に戻る
+$backToIndex = function () {
+    $this->redirect(route('kaigo.index'));
 };
 
 ?>
@@ -217,81 +232,124 @@ $backToInput = function () {
                     <div class="mt-10 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                         <div class="flex items-center gap-2 ">
                             <div class="w-5 h-5 bg-red-500 mr-2 rounded"></div>
-                            <span class="font-medium">食事: {{ number_format($mealTime, 1) }}分</span>
+                            <span class="font-medium text-gray-900">食事: {{ number_format($mealTime, 1) }}分</span>
                         </div>
                         <div class="flex items-center gap-2 ">
                             <div class="w-5 h-5 bg-purple-500 mr-2 rounded"></div>
-                            <span class="font-medium">排泄: {{ number_format($excretionTime, 1) }}分</span>
+                            <span class="font-medium text-gray-900">排泄: {{ number_format($excretionTime, 1) }}分</span>
                         </div>
                         <div class="flex items-center gap-2 ">
                             <div class="w-5 h-5 bg-blue-500 mr-2 rounded"></div>
-                            <span class="font-medium">移動: {{ number_format($movementTime, 1) }}分</span>
+                            <span class="font-medium text-gray-900">移動: {{ number_format($movementTime, 1) }}分</span>
                         </div>
                         <div class="flex items-center gap-2 ">
                             <div class="w-5 h-5 bg-teal-500 mr-2 rounded"></div>
-                            <span class="font-medium">清潔保持: {{ number_format($hygieneTime, 1) }}分</span>
+                            <span class="font-medium text-gray-900">清潔保持: {{ number_format($hygieneTime, 1) }}分</span>
                         </div>
                         <div class="flex items-center gap-2 ">
                             <div class="w-5 h-5 bg-green-500 mr-2 rounded"></div>
-                            <span class="font-medium">間接: {{ number_format($indirectTime, 1) }}分</span>
+                            <span class="font-medium text-gray-900">間接: {{ number_format($indirectTime, 1) }}分</span>
                         </div>
                         <div class="flex items-center gap-2 ">
                             <div class="w-5 h-5 bg-yellow-500 mr-2 rounded"></div>
-                            <span class="font-medium">BPSD関連: {{ number_format($bpsdTime, 1) }}分</span>
+                            <span class="font-medium text-gray-900">BPSD関連: {{ number_format($bpsdTime, 1) }}分</span>
                         </div>
                         <div class="flex items-center gap-2 ">
                             <div class="w-5 h-5 bg-orange-500 mr-2 rounded"></div>
-                            <span class="font-medium">機能訓練: {{ number_format($functionalTrainingTime, 1) }}分</span>
+                            <span class="font-medium text-gray-900">機能訓練:
+                                {{ number_format($functionalTrainingTime, 1) }}分</span>
                         </div>
                         <div class="flex items-center gap-2 ">
                             <div class="w-5 h-5 bg-lime-500 mr-2 rounded"></div>
-                            <span class="font-medium">医療関連: {{ number_format($medicalTime, 1) }}分</span>
+                            <span class="font-medium text-gray-900">医療関連: {{ number_format($medicalTime, 1) }}分</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- 入力した調査項目と回答の表示 -->
-                <div class="mt-10">
+                <!-- 入力した調査項目と回答の表示（折りたたみ可能） -->
+                <div class="mt-10" x-data="{
+                    openGroups: {},
+                    toggleAll: function() {
+                        const allGroupIds = @js(array_keys($this->groups));
+                        const allOpen = allGroupIds.every(id => this.openGroups[id]);
+                        allGroupIds.forEach(id => {
+                            this.openGroups[id] = !allOpen;
+                        });
+                    }
+                }">
+                    <div class="mb-4 flex gap-2">
+                        <button type="button" @click="openGroups = {}"
+                            class="text-sm text-blue-600 hover:text-blue-800">
+                            全て閉じる
+                        </button>
+                        <button type="button" @click="toggleAll()"
+                            class="text-sm text-blue-600 hover:text-blue-800">
+                            全て開く
+                        </button>
+                    </div>
                     <h4 class="text-md font-medium text-gray-900 mb-4 p-2 bg-blue-100 rounded">入力内容の確認</h4>
 
                     @foreach ($this->groups as $groupId => $groupName)
-                        <div class="mb-6">
-                            <h5 class="font-medium text-gray-900 mb-2 p-1 bg-gray-100 rounded">{{ $groupName }}
-                            </h5>
+                        <div class="mb-4 border border-gray-300 rounded-lg overflow-hidden">
+                            <button type="button"
+                                @click="openGroups['{{ $groupId }}'] = !openGroups['{{ $groupId }}']"
+                                class="w-full flex items-center justify-between p-3 bg-gray-100 hover:bg-gray-200 transition-colors text-left">
+                                <h5 class="font-medium text-gray-900">{{ $groupName }}</h5>
+                                <svg class="w-5 h-5 text-gray-600 transform transition-transform"
+                                    :class="{ 'rotate-180': openGroups['{{ $groupId }}'] }" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
 
-                            <div class="space-y-2 pl-4">
-                                @foreach ($this->questions as $questionId => $question)
-                                    @if (str_starts_with($questionId, $groupId . '-'))
-                                        <div class="border-b pb-2">
-                                            <p class="text-sm font-medium text-black p-2 bg-gray-200 rounded">
-                                                {{ $questionId }} {{ $question['title'] }}</p>
+                            <div x-show="openGroups['{{ $groupId }}']" x-cloak
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0 transform -translate-y-2"
+                                x-transition:enter-end="opacity-100 transform translate-y-0"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100 transform translate-y-0"
+                                x-transition:leave-end="opacity-0 transform -translate-y-2">
+                                <div class="p-4 space-y-2 bg-white">
+                                    @foreach ($this->questions as $questionId => $question)
+                                        @if (str_starts_with($questionId, $groupId . '-'))
+                                            <div class="border-b pb-2">
+                                                <p class="text-sm font-medium text-black p-2 bg-gray-200 rounded">
+                                                    {{ $questionId }} {{ $question['title'] }}</p>
 
-                                            @if (isset($this->answers[$questionId]))
-                                                @if ($question['type'] === 'checkbox' && is_array($this->answers[$questionId]))
-                                                    <p class="text-sm text-gray-800 pl-2 bg-gray-50 p-1 rounded mt-1">
-                                                        {{ implode('、', $this->answers[$questionId]) }}
-                                                    </p>
+                                                @if (isset($this->answers[$questionId]))
+                                                    @if ($question['type'] === 'checkbox' && is_array($this->answers[$questionId]))
+                                                        <p
+                                                            class="text-sm text-gray-800 pl-2 bg-gray-50 p-1 rounded mt-1">
+                                                            {{ implode('、', $this->answers[$questionId]) }}
+                                                        </p>
+                                                    @else
+                                                        <p
+                                                            class="text-sm text-gray-800 pl-2 bg-gray-50 p-1 rounded mt-1">
+                                                            {{ $this->answers[$questionId] }}
+                                                        </p>
+                                                    @endif
                                                 @else
-                                                    <p class="text-sm text-gray-800 pl-2 bg-gray-50 p-1 rounded mt-1">
-                                                        {{ $this->answers[$questionId] }}
-                                                    </p>
+                                                    <p class="text-sm text-gray-500 pl-2 italic mt-1">未回答</p>
                                                 @endif
-                                            @else
-                                                <p class="text-sm text-gray-500 pl-2 italic mt-1">未回答</p>
-                                            @endif
-                                        </div>
-                                    @endif
-                                @endforeach
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
                     @endforeach
                 </div>
 
                 <!-- 戻るボタン -->
-                <div class="mt-6">
+                <div class="mt-6 flex gap-2">
                     <button wire:click="backToInput()"
-                        class="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
+                        class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
                         入力画面に戻る
+                    </button>
+                    <button wire:click="backToIndex()"
+                        class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        一覧画面に戻る
                     </button>
                 </div>
             </div>

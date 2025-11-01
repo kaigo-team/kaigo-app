@@ -121,7 +121,8 @@ $viewResult = function ($id) {
     $input = CareAssessmentInput::find($id);
     if ($input && $input->answers) {
         $answersJson = urlencode(json_encode($input->answers));
-        $this->redirect(route('kaigo.result', ['input' => $answersJson]));
+        // inputIdも一緒に渡して、結果画面から戻る際に使用できるようにする
+        $this->redirect(route('kaigo.result', ['input' => $answersJson, 'id' => $id]));
     }
 };
 

@@ -21,6 +21,9 @@ state([
 
 // 編集時は既存データを読み込む
 mount(function ($id = null) {
+    // クエリパラメータからidを取得（結果画面から戻る場合に対応）
+    $id = $id ?? request()->query('id');
+
     if ($id) {
         $this->inputId = $id;
         $input = CareAssessmentInput::find($id);
@@ -194,13 +197,41 @@ $closeModal = function () {
 /**
  * 結果画面に移動する関数
  *
- * 入力された回答データをJSON形式に変換し、URLエンコードして結果画面に渡します。
+ * 入力された回答データを一時保存してから、JSON形式に変換し、URLエンコードして結果画面に渡します。
  * 結果画面では、このデータを使用して要介護度を算出します。
  */
 $showResult = function () {
-    // 回答をJSONに変換してURLエンコードし、結果画面に渡す
+    // まず回答データを保存
+    try {
+        $data = [
+            'answers' => $this->answers,
+            'status' => 'draft',
+            'user_id' => Auth::id(),
+        ];
+
+        if ($this->inputId) {
+            // 編集時は更新
+            $input = CareAssessmentInput::find($this->inputId);
+            if ($input) {
+                $input->update($data);
+            }
+        } else {
+            // 新規作成時
+            $input = CareAssessmentInput::create($data);
+            $this->inputId = $input->id;
+        }
+    } catch (\Exception $e) {
+        // 保存に失敗した場合はエラーを表示してリダイレクトを中止
+        $this->modalMessage = '保存に失敗しました: ' . $e->getMessage();
+        $this->modalType = 'error';
+        $this->showModal = true;
+        return;
+    }
+
+    // 保存成功後、回答をJSONに変換してURLエンコードし、結果画面に渡す
+    // inputIdも一緒に渡して、結果画面から戻る際に使用できるようにする
     $answersJson = urlencode(json_encode($this->answers));
-    $this->redirect(route('kaigo.result', ['input' => $answersJson]));
+    $this->redirect(route('kaigo.result', ['input' => $answersJson, 'id' => $this->inputId]));
 };
 
 /**
@@ -242,31 +273,31 @@ $backToIndex = function () {
                             <div class="space-y-2">
                                 @if ($question['type'] === 'radio')
                                     @foreach ($question['options'] as $option)
-                                        <div class="flex items-center p-2 hover:bg-gray-100 rounded">
+                                        <label for="{{ $questionId }}_{{ $loop->index }}"
+                                            class="flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer">
                                             <input type="radio" id="{{ $questionId }}_{{ $loop->index }}"
                                                 name="{{ $questionId }}" value="{{ $option }}"
                                                 @if (isset($this->answers[$questionId]) && $this->answers[$questionId] === $option) checked @endif
                                                 wire:click="answerQuestion('{{ $questionId }}', '{{ addslashes($option) }}')"
                                                 class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500">
-                                            <label for="{{ $questionId }}_{{ $loop->index }}"
-                                                class="ml-2 text-sm font-medium text-black">
+                                            <span class="ml-2 text-sm font-medium text-black cursor-pointer">
                                                 {{ $option }}
-                                            </label>
-                                        </div>
+                                            </span>
+                                        </label>
                                     @endforeach
                                 @else
                                     @foreach ($question['options'] as $option)
-                                        <div class="flex items-center p-2 hover:bg-gray-100 rounded">
+                                        <label for="{{ $questionId }}_{{ $loop->index }}"
+                                            class="flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer">
                                             <input type="checkbox" id="{{ $questionId }}_{{ $loop->index }}"
                                                 name="{{ $questionId }}[]" value="{{ $option }}"
                                                 @if (isset($this->answers[$questionId]) && in_array($option, $this->answers[$questionId])) checked @endif
                                                 wire:click="answerQuestion('{{ $questionId }}', '{{ addslashes($option) }}', true)"
                                                 class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-                                            <label for="{{ $questionId }}_{{ $loop->index }}"
-                                                class="ml-2 text-sm font-medium text-black">
+                                            <span class="ml-2 text-sm font-medium text-black cursor-pointer">
                                                 {{ $option }}
-                                            </label>
-                                        </div>
+                                            </span>
+                                        </label>
                                     @endforeach
                                 @endif
                             </div>
