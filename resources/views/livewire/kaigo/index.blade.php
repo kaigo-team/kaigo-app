@@ -15,6 +15,8 @@ state([
         'created_from' => null,
         'created_to' => null,
     ],
+    'editingTitleId' => null, // 編集中のタイトルのID
+    'editingTitle' => '', // 編集中のタイトル
 ]);
 
 // データ取得
@@ -151,6 +153,31 @@ $deleteInput = function ($id) {
     }
 };
 
+// タイトル編集を開始する
+$startEditingTitle = function ($id, $currentTitle) {
+    $this->editingTitleId = $id;
+    $this->editingTitle = $currentTitle ?: '';
+};
+
+// タイトル編集をキャンセルする
+$cancelEditingTitle = function () {
+    $this->editingTitleId = null;
+    $this->editingTitle = '';
+};
+
+// タイトルを更新する
+$updateTitle = function ($id) {
+    $input = CareAssessmentInput::find($id);
+    if ($input && (Auth::guest() || $input->user_id === Auth::id())) {
+        $input->update([
+            'title' => $this->editingTitle ?: null,
+        ]);
+        $this->loadInputs();
+        $this->editingTitleId = null;
+        $this->editingTitle = '';
+    }
+};
+
 ?>
 
 <div class="py-12">
@@ -204,11 +231,44 @@ $deleteInput = function ($id) {
                 @if (count($inputs) > 0)
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         @foreach ($inputs as $input)
-                            <div class="border rounded-lg p-4 bg-white shadow-md hover:shadow-lg transition-shadow">
+                            <div
+                                class="border rounded-lg p-4 bg-white shadow-md hover:shadow-lg transition-shadow hover:bg-gray-50">
                                 <!-- タイトル -->
-                                <h3 class="text-lg font-bold text-gray-900 mb-2">
-                                    {{ $input->title ?: '無題' }}
-                                </h3>
+                                @if ($this->editingTitleId === $input->id)
+                                    <div class="mb-2">
+                                        <input type="text" wire:model="editingTitle"
+                                            wire:keydown.enter="updateTitle({{ $input->id }})"
+                                            wire:keydown.escape="cancelEditingTitle"
+                                            class="w-full px-3 py-2 text-lg font-bold text-gray-900 border border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            autofocus>
+                                        <div class="flex gap-2 mt-2">
+                                            <button wire:click="updateTitle({{ $input->id }})"
+                                                class="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
+                                                保存
+                                            </button>
+                                            <button wire:click="cancelEditingTitle"
+                                                class="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-400">
+                                                キャンセル
+                                            </button>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h3 class="text-lg font-bold text-gray-900">
+                                            {{ $input->title ?: '無題' }}
+                                        </h3>
+                                        <button
+                                            wire:click="startEditingTitle({{ $input->id }}, '{{ $input->title ? addslashes($input->title) : '' }}')"
+                                            class="px-2 py-1 text-xs text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                            title="タイトルを編集">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                @endif
 
                                 <!-- 進捗バー -->
                                 @php
@@ -233,32 +293,27 @@ $deleteInput = function ($id) {
 
                                 <!-- 情報 -->
                                 <div class="space-y-1 mb-4">
-                                    <div class="text-sm">
-                                        <span class="font-medium text-gray-600">進捗状況:</span>
+                                    <div class="flex justify-between items-center">
+                                        <div class="text-sm">
+                                            <span class="font-medium text-gray-600">進捗状況:</span>
+                                            @if ($input->status === 'completed')
+                                                <span
+                                                    class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">完了</span>
+                                            @else
+                                                <span
+                                                    class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">一時保存</span>
+                                            @endif
+                                        </div>
+
                                         @if ($input->status === 'completed')
-                                            <span
-                                                class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">完了</span>
-                                        @else
-                                            <span
-                                                class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">一時保存</span>
+                                            @if ($input->care_level)
+                                                <div class="text-sm">
+                                                    <span
+                                                        class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">{{ $input->care_level }}</span>
+                                                </div>
+                                            @endif
                                         @endif
                                     </div>
-
-                                    @if ($input->status === 'completed')
-                                        @if ($input->care_level)
-                                            <div class="text-sm">
-                                                <span class="font-medium text-gray-600">要介護度:</span>
-                                                <span
-                                                    class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">{{ $input->care_level }}</span>
-                                            </div>
-                                        @endif
-                                        @if ($input->care_time)
-                                            <div class="text-sm text-gray-600">
-                                                <span class="font-medium">要介護認定基準時間:</span> {{ $input->care_time }}分
-                                            </div>
-                                        @endif
-                                    @endif
-
 
                                     <div class="text-xs text-gray-600">
                                         <span class="font-light">作成日時:</span>
