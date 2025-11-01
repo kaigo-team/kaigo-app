@@ -17,10 +17,14 @@ state([
     'showModal' => false,
     'modalMessage' => '',
     'modalType' => 'success', // 'success' or 'error'
+    'errors' => [], // バリデーションエラー
 ]);
 
 // 編集時は既存データを読み込む
 mount(function ($id = null) {
+    // クエリパラメータからidを取得（結果画面から戻る場合に対応）
+    $id = $id ?? request()->query('id');
+
     if ($id) {
         $this->inputId = $id;
         $input = CareAssessmentInput::find($id);
@@ -56,19 +60,35 @@ $currentGroupQuestions = computed(function () {
 /**
  * 回答の進捗率を計算するcomputed関数
  *
- * 全質問数に対する回答済み質問数の割合をパーセンテージで計算します。
+ * 必須質問（ラジオボタン）のみを対象に、回答済み質問数の割合をパーセンテージで計算します。
+ * 必須ではないチェックボックスの質問は考慮しません。
  * この値は進捗バーの表示に使用されます。
  *
  * @return float 進捗率（0〜100のパーセンテージ値）
  */
 $progressPercentage = computed(function () {
-    // 全質問数を取得
-    $totalQuestions = count($this->questions);
-    // 回答済みの質問数を取得（answersの要素数）
-    $answeredQuestions = count($this->answers);
+    // 必須質問（ラジオボタンのみ）の総数を計算
+    $requiredQuestions = 0;
+    $answeredRequiredQuestions = 0;
+
+    foreach ($this->questions as $questionId => $question) {
+        // ラジオボタンの質問のみをカウント（必須質問）
+        if ($question['type'] === 'radio') {
+            $requiredQuestions++;
+            // 回答済みかどうかをチェック
+            if (isset($this->answers[$questionId]) && !empty($this->answers[$questionId])) {
+                $answeredRequiredQuestions++;
+            }
+        }
+    }
+
+    // 必須質問が0の場合は0%を返す
+    if ($requiredQuestions === 0) {
+        return 0;
+    }
 
     // 進捗率をパーセンテージで計算して返す
-    return ($answeredQuestions / $totalQuestions) * 100;
+    return ($answeredRequiredQuestions / $requiredQuestions) * 100;
 });
 
 /**
@@ -80,6 +100,7 @@ $progressPercentage = computed(function () {
  *
  * この関数は質問への回答を処理し、$answers配列に保存します。
  * チェックボックスの場合は配列として保存し、ラジオボタンの場合は単一の値として保存します。
+ * 回答が選択された場合は、該当質問のエラーメッセージを削除します。
  */
 $answerQuestion = function ($questionId, $answer, $isCheckbox = false) {
     // チェックボックス（複数選択可能）の場合の処理
@@ -102,6 +123,10 @@ $answerQuestion = function ($questionId, $answer, $isCheckbox = false) {
     } else {
         // ラジオボタン（単一選択）の場合は値を直接設定
         $this->answers[$questionId] = $answer;
+        // 回答が選択されたらエラーメッセージを削除
+        if (isset($this->errors[$questionId])) {
+            unset($this->errors[$questionId]);
+        }
     }
 };
 
@@ -125,7 +150,35 @@ $getCareTime = function ($answers) {
 $previousGroup = function () {
     if ($this->currentGroup > 1) {
         $this->currentGroup--;
+        // ページのトップにスクロールするイベントを発行
+        $this->dispatch('scrollToTop');
     }
+};
+
+/**
+ * 現在のグループの必須質問（ラジオボタン）のバリデーションを実行
+ *
+ * @return bool バリデーションに成功した場合true、失敗した場合false
+ */
+$validateCurrentGroup = function () {
+    $this->errors = [];
+    $groupPrefix = $this->currentGroup . '-';
+    $hasErrors = false;
+
+    // 現在のグループの質問をチェック
+    foreach ($this->questions as $questionId => $question) {
+        if (str_starts_with($questionId, $groupPrefix)) {
+            // ラジオボタンの質問は必須
+            if ($question['type'] === 'radio') {
+                if (!isset($this->answers[$questionId]) || empty($this->answers[$questionId])) {
+                    $this->errors[$questionId] = 'この質問は必須です';
+                    $hasErrors = true;
+                }
+            }
+        }
+    }
+
+    return !$hasErrors;
 };
 
 /**
@@ -133,10 +186,19 @@ $previousGroup = function () {
  *
  * 現在のグループが最後のグループより小さい場合に、次のグループに移動します。
  * 最後のグループの場合は何も実行されません。
+ * 必須質問が未回答の場合は移動しません。
  */
 $nextGroup = function () {
+    // 現在のグループの必須質問のバリデーションを実行
+    if (!$this->validateCurrentGroup()) {
+        return;
+    }
+
+    // バリデーション成功時のみ次のグループに移動
     if ($this->currentGroup < count($this->groups)) {
         $this->currentGroup++;
+        // ページのトップにスクロールするイベントを発行
+        $this->dispatch('scrollToTop');
     }
 };
 
@@ -155,6 +217,8 @@ $saveDraft = function () {
         $data = [
             'answers' => $this->answers,
             'status' => 'draft',
+            'care_time' => null, // 一時保存時は要介護認定基準時間を保存しない
+            'care_level' => null, // 一時保存時は要介護度を保存しない
             'user_id' => Auth::id(),
         ];
 
@@ -194,13 +258,77 @@ $closeModal = function () {
 /**
  * 結果画面に移動する関数
  *
- * 入力された回答データをJSON形式に変換し、URLエンコードして結果画面に渡します。
+ * 入力された回答データを一時保存してから、JSON形式に変換し、URLエンコードして結果画面に渡します。
  * 結果画面では、このデータを使用して要介護度を算出します。
  */
 $showResult = function () {
-    // 回答をJSONに変換してURLエンコードし、結果画面に渡す
+    // 全グループの必須質問のバリデーションを実行
+    $this->errors = [];
+    $hasErrors = false;
+
+    foreach ($this->questions as $questionId => $question) {
+        // ラジオボタンの質問は必須
+        if ($question['type'] === 'radio') {
+            if (!isset($this->answers[$questionId]) || empty($this->answers[$questionId])) {
+                $this->errors[$questionId] = 'この質問は必須です';
+                $hasErrors = true;
+            }
+        }
+    }
+
+    // バリデーションエラーがある場合は処理を中止
+    if ($hasErrors) {
+        // エラーがある最初のグループに移動
+        foreach ($this->groups as $groupId => $groupName) {
+            $groupPrefix = $groupId . '-';
+            foreach ($this->errors as $questionId => $error) {
+                if (str_starts_with($questionId, $groupPrefix)) {
+                    $this->currentGroup = $groupId;
+                    return;
+                }
+            }
+        }
+        return;
+    }
+
+    // まず回答データを保存（結果画面を表示するので完了状態にする）
+    try {
+        // 要介護認定基準時間と要介護度を計算
+        $careTimeLogic = new \App\Services\CareTimeLogic();
+        $careTime = $careTimeLogic->calculateCareTime($this->answers);
+        $careLevel = $careTimeLogic->determineCareLevel($careTime);
+
+        $data = [
+            'answers' => $this->answers,
+            'status' => 'completed', // 結果画面を表示するので完了状態にする
+            'care_time' => $careTime, // 要介護認定基準時間を保存
+            'care_level' => $careLevel, // 要介護度を保存
+            'user_id' => Auth::id(),
+        ];
+
+        if ($this->inputId) {
+            // 編集時は更新
+            $input = CareAssessmentInput::find($this->inputId);
+            if ($input) {
+                $input->update($data);
+            }
+        } else {
+            // 新規作成時
+            $input = CareAssessmentInput::create($data);
+            $this->inputId = $input->id;
+        }
+    } catch (\Exception $e) {
+        // 保存に失敗した場合はエラーを表示してリダイレクトを中止
+        $this->modalMessage = '保存に失敗しました: ' . $e->getMessage();
+        $this->modalType = 'error';
+        $this->showModal = true;
+        return;
+    }
+
+    // 保存成功後、回答をJSONに変換してURLエンコードし、結果画面に渡す
+    // inputIdも一緒に渡して、結果画面から戻る際に使用できるようにする
     $answersJson = urlencode(json_encode($this->answers));
-    $this->redirect(route('kaigo.result', ['input' => $answersJson]));
+    $this->redirect(route('kaigo.result', ['input' => $answersJson, 'id' => $this->inputId]));
 };
 
 /**
@@ -212,7 +340,8 @@ $backToIndex = function () {
 
 ?>
 
-<div class="py-12">
+<div class="py-12" x-data
+    x-on:scrollToTop.window="$nextTick(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); })">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
         <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <div class="max-w-xl">
@@ -224,6 +353,38 @@ $backToIndex = function () {
                 <div class="sticky top-0 z-10 pt-2 pb-2 bg-white px-4 py-2">
                     <div class="w-full bg-gray-200 rounded-full h-2.5">
                         <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ $this->progressPercentage }}%"></div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between mt-6 mb-4">
+                    <button wire:click="backToIndex"
+                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                        一覧に戻る
+                    </button>
+
+                    <div class="flex gap-2">
+                        <button wire:click="saveDraft" wire:loading.attr="disabled"
+                            class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span wire:loading.remove>一時保存</span>
+                            <span wire:loading>保存中...</span>
+                        </button>
+
+                        <button wire:click="previousGroup" @if ($this->currentGroup === 1) disabled @endif
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md @if ($this->currentGroup === 1) opacity-50 cursor-not-allowed @endif">
+                            前へ
+                        </button>
+
+                        @if ($this->currentGroup < count($this->groups))
+                            <button wire:click="nextGroup"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                次へ
+                            </button>
+                        @else
+                            <button wire:click="showResult"
+                                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                                結果を見る
+                            </button>
+                        @endif
                     </div>
                 </div>
 
@@ -242,31 +403,34 @@ $backToIndex = function () {
                             <div class="space-y-2">
                                 @if ($question['type'] === 'radio')
                                     @foreach ($question['options'] as $option)
-                                        <div class="flex items-center p-2 hover:bg-gray-100 rounded">
+                                        <label for="{{ $questionId }}_{{ $loop->index }}"
+                                            class="flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer @if (isset($this->errors[$questionId])) border border-red-500 @endif">
                                             <input type="radio" id="{{ $questionId }}_{{ $loop->index }}"
                                                 name="{{ $questionId }}" value="{{ $option }}"
                                                 @if (isset($this->answers[$questionId]) && $this->answers[$questionId] === $option) checked @endif
                                                 wire:click="answerQuestion('{{ $questionId }}', '{{ addslashes($option) }}')"
-                                                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500">
-                                            <label for="{{ $questionId }}_{{ $loop->index }}"
-                                                class="ml-2 text-sm font-medium text-black">
+                                                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 @if (isset($this->errors[$questionId])) border-red-500 @endif">
+                                            <span class="ml-2 text-sm font-medium text-black cursor-pointer">
                                                 {{ $option }}
-                                            </label>
-                                        </div>
+                                            </span>
+                                        </label>
                                     @endforeach
+                                    @if (isset($this->errors[$questionId]))
+                                        <p class="text-sm text-red-600 mt-1">{{ $this->errors[$questionId] }}</p>
+                                    @endif
                                 @else
                                     @foreach ($question['options'] as $option)
-                                        <div class="flex items-center p-2 hover:bg-gray-100 rounded">
+                                        <label for="{{ $questionId }}_{{ $loop->index }}"
+                                            class="flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer">
                                             <input type="checkbox" id="{{ $questionId }}_{{ $loop->index }}"
                                                 name="{{ $questionId }}[]" value="{{ $option }}"
                                                 @if (isset($this->answers[$questionId]) && in_array($option, $this->answers[$questionId])) checked @endif
                                                 wire:click="answerQuestion('{{ $questionId }}', '{{ addslashes($option) }}', true)"
                                                 class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
-                                            <label for="{{ $questionId }}_{{ $loop->index }}"
-                                                class="ml-2 text-sm font-medium text-black">
+                                            <span class="ml-2 text-sm font-medium text-black cursor-pointer">
                                                 {{ $option }}
-                                            </label>
-                                        </div>
+                                            </span>
+                                        </label>
                                     @endforeach
                                 @endif
                             </div>
@@ -305,6 +469,17 @@ $backToIndex = function () {
                                 結果を見る
                             </button>
                         @endif
+
+                        @script
+                            <script>
+                                Livewire.on('scrollToTop', () => {
+                                    window.scrollTo({
+                                        top: 0,
+                                        behavior: 'smooth'
+                                    });
+                                });
+                            </script>
+                        @endscript
                     </div>
                 </div>
             </div>
