@@ -86,14 +86,29 @@ $closeFilterModal = function () {
 // 進捗率を計算するcomputed関数
 $getProgressPercentage = function ($input) {
     $answers = $input->answers ?? [];
-    $totalQuestions = count(SurveyQuestions::getAllQuestions());
-    $answeredQuestions = count($answers);
+    $allQuestions = SurveyQuestions::getAllQuestions();
 
-    if ($totalQuestions === 0) {
+    // 必須質問（ラジオボタンのみ）の総数を計算
+    $requiredQuestions = 0;
+    $answeredRequiredQuestions = 0;
+
+    foreach ($allQuestions as $questionId => $question) {
+        // ラジオボタンの質問のみをカウント（必須質問）
+        if ($question['type'] === 'radio') {
+            $requiredQuestions++;
+            // 回答済みかどうかをチェック
+            if (isset($answers[$questionId]) && !empty($answers[$questionId])) {
+                $answeredRequiredQuestions++;
+            }
+        }
+    }
+
+    // 必須質問が0の場合は0%を返す
+    if ($requiredQuestions === 0) {
         return 0;
     }
 
-    return ($answeredQuestions / $totalQuestions) * 100;
+    return ($answeredRequiredQuestions / $requiredQuestions) * 100;
 };
 
 // 進捗バーの色を取得する関数
