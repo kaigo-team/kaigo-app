@@ -1,7 +1,9 @@
 <?php
 
-use function Livewire\Volt\{state, computed};
+use function Livewire\Volt\{state, computed, mount};
 use App\Services\SurveyQuestions;
+use App\Models\CareAssessmentInput;
+use Illuminate\Support\Facades\Auth;
 
 // 調査項目のグループとその内容を定義
 state([
@@ -9,7 +11,24 @@ state([
     'answers' => [],
     'groups' => SurveyQuestions::getGroups(),
     'questions' => SurveyQuestions::getAllQuestions(),
+    'inputId' => null,
+    'saving' => false,
+    'saved' => false,
+    'showModal' => false,
+    'modalMessage' => '',
+    'modalType' => 'success', // 'success' or 'error'
 ]);
+
+// 編集時は既存データを読み込む
+mount(function ($id = null) {
+    if ($id) {
+        $this->inputId = $id;
+        $input = CareAssessmentInput::find($id);
+        if ($input) {
+            $this->answers = $input->answers ?? [];
+        }
+    }
+});
 
 /**
  * 現在表示中のグループに属する質問のみを取得するcomputed関数
@@ -122,6 +141,57 @@ $nextGroup = function () {
 };
 
 /**
+ * 一時保存する関数
+ *
+ * 現在の回答データをデータベースに保存します。
+ * 保存成功時はモーダルでメッセージを表示し、入力画面に留まります。
+ */
+$saveDraft = function () {
+    $this->saving = true;
+    $this->saved = false;
+    $this->showModal = false;
+
+    try {
+        $data = [
+            'answers' => $this->answers,
+            'status' => 'draft',
+            'user_id' => Auth::id(),
+        ];
+
+        if ($this->inputId) {
+            // 編集時は更新
+            $input = CareAssessmentInput::find($this->inputId);
+            if ($input) {
+                $input->update($data);
+            }
+        } else {
+            // 新規作成時
+            $input = CareAssessmentInput::create($data);
+            $this->inputId = $input->id;
+        }
+
+        $this->saved = true;
+        $this->modalMessage = '一時保存しました';
+        $this->modalType = 'success';
+        $this->showModal = true;
+    } catch (\Exception $e) {
+        $this->modalMessage = '保存に失敗しました: ' . $e->getMessage();
+        $this->modalType = 'error';
+        $this->showModal = true;
+    } finally {
+        $this->saving = false;
+    }
+};
+
+/**
+ * モーダルを閉じる関数
+ */
+$closeModal = function () {
+    $this->showModal = false;
+    $this->modalMessage = '';
+};
+
+/**
  * 結果画面に移動する関数
  *
  * 入力された回答データをJSON形式に変換し、URLエンコードして結果画面に渡します。
@@ -131,6 +201,13 @@ $showResult = function () {
     // 回答をJSONに変換してURLエンコードし、結果画面に渡す
     $answersJson = urlencode(json_encode($this->answers));
     $this->redirect(route('kaigo.result', ['input' => $answersJson]));
+};
+
+/**
+ * 一覧画面に戻る関数
+ */
+$backToIndex = function () {
+    $this->redirect(route('kaigo.index'));
 };
 
 ?>
@@ -197,25 +274,125 @@ $showResult = function () {
                     @endforeach
                 </div>
 
+
                 <!-- ナビゲーションボタン -->
                 <div class="flex justify-between mt-6">
-                    <button wire:click="previousGroup" @if ($this->currentGroup === 1) disabled @endif
-                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md @if ($this->currentGroup === 1) opacity-50 cursor-not-allowed @endif">
-                        前へ
+                    <button wire:click="backToIndex"
+                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                        一覧に戻る
                     </button>
 
-                    @if ($this->currentGroup < count($this->groups))
-                        <button wire:click="nextGroup"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                            次へ
+                    <div class="flex gap-2">
+                        <button wire:click="saveDraft" wire:loading.attr="disabled"
+                            class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span wire:loading.remove>一時保存</span>
+                            <span wire:loading>保存中...</span>
                         </button>
-                    @else
-                        <button wire:click="showResult"
-                            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-                            結果を見る
+
+                        <button wire:click="previousGroup" @if ($this->currentGroup === 1) disabled @endif
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md @if ($this->currentGroup === 1) opacity-50 cursor-not-allowed @endif">
+                            前へ
                         </button>
-                    @endif
+
+                        @if ($this->currentGroup < count($this->groups))
+                            <button wire:click="nextGroup"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                次へ
+                            </button>
+                        @else
+                            <button wire:click="showResult"
+                                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                                結果を見る
+                            </button>
+                        @endif
+                    </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- モーダル（画面中央表示） -->
+    <div class="fixed inset-0 z-10 flex items-center justify-center transition-opacity" x-data="{ show: @entangle('showModal') }"
+        x-show="show" x-cloak x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" wire:click="closeModal"
+        style="background-color: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px);">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all"
+            x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" @click.stop>
+            <div class="p-6">
+                @if ($modalType === 'success')
+                    <!-- 成功メッセージ -->
+                    <div class="flex items-start">
+                        <div class="flex-1">
+                            <!-- アイコンと保存完了を1行で横並び -->
+                            <div class="flex items-center mb-2">
+                                <svg class="h-10 w-10 text-green-500 mr-3 flex-shrink-0" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <h3 class="text-2xl font-bold text-gray-900">
+                                    保存完了
+                                </h3>
+                            </div>
+                            <!-- メッセージを2行目に表示 -->
+                            <p class="text-sm text-gray-600">
+                                {{ $modalMessage }}
+                            </p>
+                        </div>
+                        <div class="ml-4 flex-shrink-0">
+                            <button wire:click="closeModal" type="button"
+                                class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none">
+                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                @else
+                    <!-- エラーメッセージ -->
+                    <div class="flex items-start">
+                        <div class="flex-1">
+                            <!-- アイコンとエラーを1行で横並び -->
+                            <div class="flex items-center mb-2">
+                                <svg class="h-10 w-10 text-red-500 mr-3 flex-shrink-0" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <h3 class="text-2xl font-bold text-gray-900">
+                                    エラー
+                                </h3>
+                            </div>
+                            <!-- メッセージを2行目に表示 -->
+                            <p class="text-sm text-gray-600">
+                                {{ $modalMessage }}
+                            </p>
+                        </div>
+                        <div class="ml-4 flex-shrink-0">
+                            <button wire:click="closeModal" type="button"
+                                class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none">
+                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                @endif
+            </div>
+            <div class="bg-gray-50 px-6 py-3 flex justify-end">
+                <button wire:click="closeModal" type="button"
+                    class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    OK
+                </button>
             </div>
         </div>
     </div>
