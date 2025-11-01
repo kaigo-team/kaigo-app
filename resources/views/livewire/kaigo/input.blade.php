@@ -289,11 +289,11 @@ $showResult = function () {
         return;
     }
 
-    // まず回答データを保存
+    // まず回答データを保存（結果画面を表示するので完了状態にする）
     try {
         $data = [
             'answers' => $this->answers,
-            'status' => 'draft',
+            'status' => 'completed', // 結果画面を表示するので完了状態にする
             'user_id' => Auth::id(),
         ];
 

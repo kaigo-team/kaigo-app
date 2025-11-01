@@ -271,7 +271,10 @@ $deleteInput = function ($id) {
                                         class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
                                         編集
                                     </button>
-                                    @if ($input->answers && count($input->answers) > 0)
+                                    @php
+                                        $progressPercentage = $this->getProgressPercentage($input);
+                                    @endphp
+                                    @if ($progressPercentage >= 100)
                                         <button wire:click="viewResult({{ $input->id }})"
                                             class="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
                                             結果を見る
