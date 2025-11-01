@@ -18,6 +18,24 @@ class MedicalCareTimeCalculator extends BaseCareTimeCalculator
      */
     public function calculate(array $answers): float
     {
+        // 基本的な医療関連行為時間を計算
+        $baseTime = $this->calculateBaseMedicalTime($answers);
+
+        // 特別な医療行為の加算時間を計算
+        $additionalTime = $this->calculateSpecialMedicalCareTime($answers);
+
+        // 基本時間と加算時間を合計
+        return $baseTime + $additionalTime;
+    }
+
+    /**
+     * 基本的な医療関連行為時間を計算
+     * 
+     * @param array $answers 回答データ
+     * @return float 基本的な医療関連行為時間（分）
+     */
+    private function calculateBaseMedicalTime(array $answers): float
+    {
         // 項目2-3えん下の回答をチェック
         if (!isset($answers['2-3'])) {
             return 1.0;
@@ -31,6 +49,59 @@ class MedicalCareTimeCalculator extends BaseCareTimeCalculator
             // 項目2-3えん下が「できない」の場合
             return $this->calculateForNoSwallowing($answers);
         }
+    }
+
+    /**
+     * 特別な医療行為の加算時間を計算
+     * 
+     * @param array $answers 回答データ
+     * @return float 特別な医療行為の加算時間（分）
+     */
+    private function calculateSpecialMedicalCareTime(array $answers): float
+    {
+        $additionalTime = 0.0;
+
+        // 特別な医療行為の加算時間マップ
+        $specialMedicalCareMap = [
+            // 処置内容（6-1）
+            '点滴の管理' => 8.5,
+            '中心静脈栄養' => 8.5,
+            '透析' => 8.5,
+            'ストーマ（人工肛門）の処置' => 3.8,
+            '酸素両方' => 0.8,
+            'レスピレーター（人工呼吸器）' => 4.5,
+            '気管切開の処置' => 5.6,
+            '疼痛の看護' => 2.1,
+            '経管栄養' => 9.1,
+            // 特別な対応（6-2）
+            'モニター測定（血圧・心拍・酸素飽和度等）' => 3.6,
+            'じょくそうの処置' => 4.0,
+            'カテーテル（コンドームカテーテル・留置カテーテル・ウロストーマ等）' => 8.2,
+        ];
+
+        // 項目6-1処置内容の回答をチェック
+        if (isset($answers['6-1'])) {
+            $treatmentAnswers = is_array($answers['6-1']) ? $answers['6-1'] : [$answers['6-1']];
+
+            foreach ($treatmentAnswers as $treatmentAnswer) {
+                if (isset($specialMedicalCareMap[$treatmentAnswer])) {
+                    $additionalTime += $specialMedicalCareMap[$treatmentAnswer];
+                }
+            }
+        }
+
+        // 項目6-2特別な医療行為の回答をチェック
+        if (isset($answers['6-2'])) {
+            $specialCareAnswers = is_array($answers['6-2']) ? $answers['6-2'] : [$answers['6-2']];
+
+            foreach ($specialCareAnswers as $specialCareAnswer) {
+                if (isset($specialMedicalCareMap[$specialCareAnswer])) {
+                    $additionalTime += $specialMedicalCareMap[$specialCareAnswer];
+                }
+            }
+        }
+
+        return $additionalTime;
     }
 
     /**
