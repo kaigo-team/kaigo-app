@@ -140,126 +140,147 @@ $deleteInput = function ($id) {
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
         <!-- ヘッダー -->
-        <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-            <div class="flex justify-between items-center mb-4">
+        <div class="bg-white shadow sm:rounded-lg">
+            <div class="p-4 sm:p-8 flex justify-between items-center">
                 <h2 class="text-2xl font-bold text-gray-900">
                     要介護度算出アプリ
                 </h2>
-                <div class="flex gap-2">
-                    <button wire:click="openFilterModal"
-                        class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
-                        フィルター
-                    </button>
+            </div>
+
+            <!-- ヒーローセクション -->
+            <div class="relative p-6 sm:p-8 mb-6 overflow-hidden"
+                style="background-image: url('{{ asset('hero_section_bg.jpg') }}'); background-size: cover; background-position: center; background-repeat: no-repeat; height: 500px;">
+                <!-- オーバーレイ（背景画像を少し暗くしてテキストを見やすくする） -->
+                <div class="absolute inset-0 " style="background-color: rgba(0, 0, 0, 0.4);"></div>
+                <!-- コンテンツ -->
+                <div class="relative text-center z-10 h-full flex justify-center items-center flex-col">
+                    <h3 class="text-2xl sm:text-3xl font-bold text-white mb-3">
+                        新しい要介護度算出を開始
+                    </h3>
+                    <p class="text-white mb-6 text-sm sm:text-base">
+                        調査項目に回答することで、要介護度を自動で算出できます。<br class="hidden sm:block">
+                        入力内容は一時保存できるので、途中で中断しても安心です。
+                    </p>
                     <a href="{{ route('kaigo.input') }}"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        class="inline-block px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
                         新規作成
                     </a>
                 </div>
             </div>
 
-            <!-- メッセージ表示 -->
-            @if (session()->has('message'))
-                <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-                    {{ session('message') }}
+            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+
+                <!-- メッセージ表示 -->
+                @if (session()->has('message'))
+                    <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+                        {{ session('message') }}
+                    </div>
+                @endif
+
+                <div class="flex gap-2 mb-5">
+                    <button wire:click="openFilterModal"
+                        class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
+                        フィルター
+                    </button>
                 </div>
-            @endif
 
-            <!-- 一覧表示 -->
-            @if (count($inputs) > 0)
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    @foreach ($inputs as $input)
-                        <div class="border rounded-lg p-4 bg-white shadow-md hover:shadow-lg transition-shadow">
-                            <!-- タイトル -->
-                            <h3 class="text-lg font-bold text-gray-900 mb-2">
-                                {{ $input->title ?: '無題' }}
-                            </h3>
+                <!-- 一覧表示 -->
+                @if (count($inputs) > 0)
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        @foreach ($inputs as $input)
+                            <div class="border rounded-lg p-4 bg-white shadow-md hover:shadow-lg transition-shadow">
+                                <!-- タイトル -->
+                                <h3 class="text-lg font-bold text-gray-900 mb-2">
+                                    {{ $input->title ?: '無題' }}
+                                </h3>
 
-                            <!-- 進捗バー -->
-                            @php
-                                $progressPercentage = $this->getProgressPercentage($input);
-                                $progressColor = $this->getProgressColor($progressPercentage);
-                                $answeredQuestions = count($input->answers ?? []);
-                                $totalQuestions = count(SurveyQuestions::getAllQuestions());
-                            @endphp
-                            <div class="mb-2">
-                                <div class="flex justify-between items-center mb-1">
-                                    <span class="text-sm text-gray-600">進捗</span>
-                                    <span class="text-sm font-medium text-gray-900">
-                                        {{ number_format($progressPercentage, 1) }}%
-                                        ({{ $answeredQuestions }}/{{ $totalQuestions }})
-                                    </span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="{{ $progressColor }} h-2 rounded-full transition-all"
-                                        style="width: {{ $progressPercentage }}%"></div>
-                                </div>
-                            </div>
-
-                            <!-- 情報 -->
-                            <div class="space-y-1 mb-4">
-                                <div class="text-sm text-gray-600">
-                                    <span class="font-medium">作成日時:</span>
-                                    {{ $input->created_at ? $input->created_at->format('Y/m/d H:i') : '-' }}
-                                </div>
-                                <div class="text-sm text-gray-600">
-                                    <span class="font-medium">更新日時:</span>
-                                    {{ $input->updated_at ? $input->updated_at->format('Y/m/d H:i') : '-' }}
-                                </div>
-                                @if ($input->care_level)
-                                    <div class="text-sm">
-                                        <span class="font-medium text-gray-600">要介護度:</span>
-                                        <span
-                                            class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">{{ $input->care_level }}</span>
+                                <!-- 進捗バー -->
+                                @php
+                                    $progressPercentage = $this->getProgressPercentage($input);
+                                    $progressColor = $this->getProgressColor($progressPercentage);
+                                    $answeredQuestions = count($input->answers ?? []);
+                                    $totalQuestions = count(SurveyQuestions::getAllQuestions());
+                                @endphp
+                                <div class="mb-2">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-sm text-gray-600">進捗</span>
+                                        <span class="text-sm font-medium text-gray-900">
+                                            {{ number_format($progressPercentage, 1) }}%
+                                            ({{ $answeredQuestions }}/{{ $totalQuestions }})
+                                        </span>
                                     </div>
-                                @endif
-                                @if ($input->care_time)
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="{{ $progressColor }} h-2 rounded-full transition-all"
+                                            style="width: {{ $progressPercentage }}%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- 情報 -->
+                                <div class="space-y-1 mb-4">
                                     <div class="text-sm text-gray-600">
-                                        <span class="font-medium">要介護認定基準時間:</span> {{ $input->care_time }}分
+                                        <span class="font-medium">作成日時:</span>
+                                        {{ $input->created_at ? $input->created_at->format('Y/m/d H:i') : '-' }}
                                     </div>
-                                @endif
-                                <div class="text-sm">
-                                    <span class="font-medium text-gray-600">進捗状況:</span>
-                                    @if ($input->status === 'completed')
-                                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">完了</span>
-                                    @else
-                                        <span
-                                            class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">一時保存</span>
+                                    <div class="text-sm text-gray-600">
+                                        <span class="font-medium">更新日時:</span>
+                                        {{ $input->updated_at ? $input->updated_at->format('Y/m/d H:i') : '-' }}
+                                    </div>
+                                    @if ($input->care_level)
+                                        <div class="text-sm">
+                                            <span class="font-medium text-gray-600">要介護度:</span>
+                                            <span
+                                                class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">{{ $input->care_level }}</span>
+                                        </div>
                                     @endif
+                                    @if ($input->care_time)
+                                        <div class="text-sm text-gray-600">
+                                            <span class="font-medium">要介護認定基準時間:</span> {{ $input->care_time }}分
+                                        </div>
+                                    @endif
+                                    <div class="text-sm">
+                                        <span class="font-medium text-gray-600">進捗状況:</span>
+                                        @if ($input->status === 'completed')
+                                            <span
+                                                class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">完了</span>
+                                        @else
+                                            <span
+                                                class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">一時保存</span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <!-- ボタン -->
+                                <div class="flex gap-2">
+                                    <button wire:click="editInput({{ $input->id }})"
+                                        class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
+                                        編集
+                                    </button>
+                                    @if ($input->answers && count($input->answers) > 0)
+                                        <button wire:click="viewResult({{ $input->id }})"
+                                            class="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+                                            結果を見る
+                                        </button>
+                                    @endif
+                                    <button wire:click="deleteInput({{ $input->id }})" wire:confirm="削除してもよろしいですか？"
+                                        class="px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700">
+                                        削除
+                                    </button>
                                 </div>
                             </div>
-
-                            <!-- ボタン -->
-                            <div class="flex gap-2">
-                                <button wire:click="editInput({{ $input->id }})"
-                                    class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
-                                    編集
-                                </button>
-                                @if ($input->answers && count($input->answers) > 0)
-                                    <button wire:click="viewResult({{ $input->id }})"
-                                        class="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
-                                        結果を見る
-                                    </button>
-                                @endif
-                                <button wire:click="deleteInput({{ $input->id }})" wire:confirm="削除してもよろしいですか？"
-                                    class="px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700">
-                                    削除
-                                </button>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <div class="text-center py-12">
-                    <p class="text-gray-500 text-lg">データがありません</p>
-                    <a href="{{ route('kaigo.input') }}"
-                        class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                        新規作成
-                    </a>
-                </div>
-            @endif
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-12">
+                        <p class="text-gray-500 text-lg">データがありません</p>
+                        <a href="{{ route('kaigo.input') }}"
+                            class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            新規作成
+                        </a>
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
-
     <!-- フィルターモーダル -->
     <div class="fixed inset-0 z-10 flex items-center justify-center transition-opacity" x-data="{ show: @entangle('showFilterModal') }"
         x-show="show" x-cloak x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
