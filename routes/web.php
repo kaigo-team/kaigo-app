@@ -10,6 +10,11 @@ Route::view('dashboard', 'dashboard')
 
 // 要介護度算出アプリのルート
 Volt::route('/', 'kaigo.index')->name('kaigo.index');
+
+// homeルートを追加（認証関連のレイアウトで使用）
+Route::get('/home', function () {
+    return redirect()->route('kaigo.index');
+})->name('home');
 // 編集ルートを先に定義（より具体的なルート）
 Volt::route('kaigo/input/{id}', 'kaigo.input')->name('kaigo.input.edit');
 // 新規作成ルート（より一般的なルート）
