@@ -213,19 +213,18 @@ class CareTimeLogic
     public function determineCareLevel(int $careTime): string
     {
         // 要介護認定基準時間に基づいて判定
-        if ($careTime < 32) {
-            return '自立';
-        } elseif ($careTime < 50) {
+        // ルールファイルに基づく判定基準
+        if ($careTime < 25) {
+            return '非該当';
+        } elseif ($careTime < 32) {
             return '要支援1';
+        } elseif ($careTime < 50) {
+            return '要支援2・要介護1';
         } elseif ($careTime < 70) {
-            return '要支援2';
-        } elseif ($careTime < 90) {
-            return '要介護1';
-        } elseif ($careTime < 110) {
             return '要介護2';
-        } elseif ($careTime < 130) {
+        } elseif ($careTime < 90) {
             return '要介護3';
-        } elseif ($careTime < 150) {
+        } elseif ($careTime < 110) {
             return '要介護4';
         } else {
             return '要介護5';
