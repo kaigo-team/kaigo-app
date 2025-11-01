@@ -218,13 +218,19 @@ $backToIndex = function () {
                         <div class="absolute h-10 w-3 bg-black z-20" style="left: {{ $position }}%"></div>
 
                         <!-- 要介護度のラベル -->
-                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800" style="left: 10.7%">要支援1</div>
-                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800" style="left: 28.5%">要支援2</div>
-                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800" style="left: 42.9%">要介護1</div>
-                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800" style="left: 57.2%">要介護2</div>
-                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800" style="left: 71.5%">要介護3</div>
-                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800" style="left: 85.8%">要介護4</div>
-                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800 whitespace-nowrap"
+                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
+                            style="left: 10.7%">要支援1</div>
+                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
+                            style="left: 28.5%">要支援2</div>
+                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
+                            style="left: 42.9%">要介護1</div>
+                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
+                            style="left: 57.2%">要介護2</div>
+                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
+                            style="left: 71.5%">要介護3</div>
+                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
+                            style="left: 85.8%">要介護4</div>
+                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
                             style="left: 96.5%">要介護5</div>
                     </div>
 
