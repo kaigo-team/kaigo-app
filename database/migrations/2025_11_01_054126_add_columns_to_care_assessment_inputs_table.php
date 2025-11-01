@@ -31,12 +31,11 @@ return new class extends Migration
             }
             if (!Schema::hasColumn('care_assessment_inputs', 'user_id')) {
                 $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade')->comment('ユーザーID')->after('status');
+                // foreignId()は自動的にインデックスを作成するため、ここではインデックス追加不要
             }
 
             // インデックスの追加（存在しない場合のみ）
-            if (!$this->hasIndex('care_assessment_inputs', 'user_id')) {
-                $table->index('user_id');
-            }
+            // user_idはforeignId()で自動的にインデックスが作成されるため、インデックス追加は不要
             if (!$this->hasIndex('care_assessment_inputs', 'status')) {
                 $table->index('status');
             }
@@ -50,25 +49,36 @@ return new class extends Migration
     }
 
     /**
-     * インデックスが存在するかチェック
+     * インデックスが存在するかチェック（SQLite対応）
      */
     private function hasIndex(string $table, string $column): bool
     {
         try {
             $connection = DB::connection();
-            $databaseName = $connection->getDatabaseName();
+            $driver = $connection->getDriverName();
             $indexName = "{$table}_{$column}_index";
 
-            $result = DB::select(
-                "SELECT COUNT(*) as count FROM information_schema.statistics 
-                WHERE table_schema = ? AND table_name = ? AND index_name = ?",
-                [$databaseName, $table, $indexName]
-            );
-
-            return isset($result[0]) && $result[0]->count > 0;
+            if ($driver === 'sqlite') {
+                // SQLiteの場合
+                $result = DB::select(
+                    "SELECT name FROM sqlite_master 
+                    WHERE type = 'index' AND name = ?",
+                    [$indexName]
+                );
+                return !empty($result);
+            } else {
+                // MySQL/PostgreSQLの場合
+                $databaseName = $connection->getDatabaseName();
+                $result = DB::select(
+                    "SELECT COUNT(*) as count FROM information_schema.statistics 
+                    WHERE table_schema = ? AND table_name = ? AND index_name = ?",
+                    [$databaseName, $table, $indexName]
+                );
+                return isset($result[0]) && $result[0]->count > 0;
+            }
         } catch (\Exception $e) {
-            // エラーが発生した場合は安全のためfalseを返す（インデックス追加を試みる）
-            return false;
+            // エラーが発生した場合は安全のためtrueを返す（インデックス追加をスキップ）
+            return true;
         }
     }
 
@@ -79,6 +89,7 @@ return new class extends Migration
     {
         Schema::table('care_assessment_inputs', function (Blueprint $table) {
             // インデックスを削除
+            // user_idのインデックスはforeignId()で自動的に作成されるため、外部キー削除時に自動削除される
             if ($this->hasIndex('care_assessment_inputs', 'updated_at')) {
                 $table->dropIndex(['updated_at']);
             }
@@ -87,9 +98,6 @@ return new class extends Migration
             }
             if ($this->hasIndex('care_assessment_inputs', 'status')) {
                 $table->dropIndex(['status']);
-            }
-            if ($this->hasIndex('care_assessment_inputs', 'user_id')) {
-                $table->dropIndex(['user_id']);
             }
 
             // 外部キーを削除

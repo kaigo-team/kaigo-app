@@ -27,7 +27,7 @@ return new class extends Migration
             $table->timestamps();
 
             // インデックスを追加
-            $table->index('user_id');
+            // user_idはforeignId()で自動的にインデックスが作成されるため、追加不要
             $table->index('status');
             $table->index('created_at');
             $table->index('updated_at');
