@@ -21,5 +21,10 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
             'password' => Hash::make('password'),
         ]);
+
+        //MemoSeeder（シーダークラス）の呼び出し
+        if (config('app.env') == 'local') {
+            $this->call(DatabaseSeeder::class);
+        }
     }
 }
