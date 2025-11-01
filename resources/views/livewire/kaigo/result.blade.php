@@ -71,12 +71,12 @@ $backToInput = function () {
                 </h2>
 
                 <!-- 要介護度の表示 -->
-                <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                    <h3 class="text-xl font-bold text-center text-blue-800">
-                        判定結果: {{ $this->careLevel }}
+                <div class="mt-6 p-6 bg-blue-100 rounded-lg border-2 border-blue-300 shadow-md">
+                    <h3 class="text-2xl font-bold text-center text-blue-800 mb-2">
+                        判定結果: <span class="text-3xl">{{ $this->careLevel }}</span>
                     </h3>
-                    <p class="text-center text-gray-600 mt-2">
-                        要介護認定基準時間: {{ $this->careTime }}分
+                    <p class="text-center text-gray-700 mt-3 text-lg">
+                        要介護認定基準時間: <span class="font-bold">{{ $this->careTime }}分</span>
                     </p>
                     @php
                         $careTimeLogic = new \App\Services\CareTimeLogic();
@@ -87,11 +87,11 @@ $backToInput = function () {
                         $mentalScore = $careTimeLogic->calculateMentalBehaviorDisorderScore($this->answers);
                         $socialScore = $careTimeLogic->calculateSocialAdaptationScore($this->answers);
                     @endphp
-                    <p class="text-center text-gray-600 mt-1">
-                        中間得点: {{ number_format($intermediateScore, 1) }}点
+                    <p class="text-center text-gray-700 mt-2">
+                        中間得点: <span class="font-semibold">{{ number_format($intermediateScore, 1) }}点</span>
                     </p>
-                    <div class="mt-3 p-2 bg-white rounded-lg border border-gray-200">
-                        <h4 class="text-sm font-medium text-gray-700 mb-2 text-center">群別中間得点</h4>
+                    <div class="mt-4 p-3 bg-white rounded-lg border border-blue-200 shadow-sm">
+                        <h4 class="text-base font-medium text-blue-700 mb-3 text-center">群別中間得点</h4>
                         <div class="grid grid-cols-1 gap-2 text-sm">
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">第1群（身体機能・起居動作）:</span>
@@ -119,31 +119,134 @@ $backToInput = function () {
 
                 <!-- 要介護度の帯グラフ -->
                 <div class="mt-6">
-                    <h4 class="text-sm font-medium text-gray-700 mb-2">要介護認定基準時間</h4>
-                    <div class="relative h-8 bg-gray-200 rounded-full">
+                    <h4 class="text-base font-medium text-blue-700 mb-3">要介護認定基準時間</h4>
+                    <div class="relative h-10  border border-gray-300 shadow-sm">
                         <!-- 各要介護度の境界線 -->
-                        <div class="absolute h-full w-px bg-gray-400" style="left: 21.3%"></div>
-                        <div class="absolute h-full w-px bg-gray-400" style="left: 35.7%"></div>
-                        <div class="absolute h-full w-px bg-gray-400" style="left: 50%"></div>
-                        <div class="absolute h-full w-px bg-gray-400" style="left: 64.3%"></div>
-                        <div class="absolute h-full w-px bg-gray-400" style="left: 78.6%"></div>
-                        <div class="absolute h-full w-px bg-gray-400" style="left: 92.9%"></div>
+                        <div class="absolute h-full w-px bg-gray-400 z-10" style="left: 21.3%"></div>
+                        <div class="absolute h-full w-px bg-gray-400 z-10" style="left: 35.7%"></div>
+                        <div class="absolute h-full w-px bg-gray-400 z-10" style="left: 50%"></div>
+                        <div class="absolute h-full w-px bg-gray-400 z-10" style="left: 64.3%"></div>
+                        <div class="absolute h-full w-px bg-gray-400 z-10" style="left: 78.6%"></div>
+                        <div class="absolute h-full w-px bg-gray-400 z-10" style="left: 92.9%"></div>
+
+                        <!-- 各行為区分の色分け表示 -->
+                        @php
+                            // CareTimeLogicサービスを利用して各行為区分の時間を取得
+                            $careTimeLogic = new \App\Services\CareTimeLogic();
+
+                            // 各行為区分の計算クラスを作成
+                            $mealCalculator = new \App\Services\CareTimeCalculators\MealCareTimeCalculator();
+                            $excretionCalculator = new \App\Services\CareTimeCalculators\ExcretionCareTimeCalculator();
+                            $movementCalculator = new \App\Services\CareTimeCalculators\MovementCareTimeCalculator();
+                            $hygieneCalculator = new \App\Services\CareTimeCalculators\HygieneCareTimeCalculator();
+                            $indirectCalculator = new \App\Services\CareTimeCalculators\IndirectCareTimeCalculator();
+                            $bpsdCalculator = new \App\Services\CareTimeCalculators\BPSDCareTimeCalculator();
+                            $functionalTrainingCalculator = new \App\Services\CareTimeCalculators\FunctionalTrainingCareTimeCalculator();
+                            $medicalCalculator = new \App\Services\CareTimeCalculators\MedicalCareTimeCalculator();
+
+                            // 各行為区分の時間を計算
+                            $mealTime = $mealCalculator->calculate($this->answers);
+                            $excretionTime = $excretionCalculator->calculate($this->answers);
+                            $movementTime = $movementCalculator->calculate($this->answers);
+                            $hygieneTime = $hygieneCalculator->calculate($this->answers);
+                            $indirectTime = $indirectCalculator->calculate($this->answers);
+                            $bpsdTime = $bpsdCalculator->calculate($this->answers);
+                            $functionalTrainingTime = $functionalTrainingCalculator->calculate($this->answers);
+                            $medicalTime = $medicalCalculator->calculate($this->answers);
+
+                            // 合計時間（最大170分とする）
+                            $totalTime = $this->careTime;
+                            $maxTime = 170;
+
+                            // 各行為区分の幅を計算（%）
+                            $mealWidth = ($mealTime / $maxTime) * 100;
+                            $excretionWidth = ($excretionTime / $maxTime) * 100;
+                            $movementWidth = ($movementTime / $maxTime) * 100;
+                            $hygieneWidth = ($hygieneTime / $maxTime) * 100;
+                            $indirectWidth = ($indirectTime / $maxTime) * 100;
+                            $bpsdWidth = ($bpsdTime / $maxTime) * 100;
+                            $functionalTrainingWidth = ($functionalTrainingTime / $maxTime) * 100;
+                            $medicalWidth = ($medicalTime / $maxTime) * 100;
+
+                            // 左端からの位置を計算
+                            $excretionLeft = $mealWidth;
+                            $movementLeft = $excretionLeft + $excretionWidth;
+                            $hygieneLeft = $movementLeft + $movementWidth;
+                            $indirectLeft = $hygieneLeft + $hygieneWidth;
+                            $bpsdLeft = $indirectLeft + $indirectWidth;
+                            $functionalTrainingLeft = $bpsdLeft + $bpsdWidth;
+                            $medicalLeft = $functionalTrainingLeft + $functionalTrainingWidth;
+                        @endphp
+
+                        <!-- 各行為区分の色分け表示 -->
+                        <div class="absolute h-10 bg-red-500" style="left: 0; width: {{ $mealWidth }}%"></div>
+                        <div class="absolute h-10 bg-purple-500"
+                            style="left: {{ $excretionLeft }}%; width: {{ $excretionWidth }}%"></div>
+                        <div class="absolute h-10 bg-blue-500"
+                            style="left: {{ $movementLeft }}%; width: {{ $movementWidth }}%"></div>
+                        <div class="absolute h-10 bg-teal-500"
+                            style="left: {{ $hygieneLeft }}%; width: {{ $hygieneWidth }}%"></div>
+                        <div class="absolute h-10 bg-green-500"
+                            style="left: {{ $indirectLeft }}%; width: {{ $indirectWidth }}%"></div>
+                        <div class="absolute h-10 bg-yellow-500"
+                            style="left: {{ $bpsdLeft }}%; width: {{ $bpsdWidth }}%"></div>
+                        <div class="absolute h-10 bg-orange-500"
+                            style="left: {{ $functionalTrainingLeft }}%; width: {{ $functionalTrainingWidth }}%">
+                        </div>
+                        <div class="absolute h-10 bg-lime-500"
+                            style="left: {{ $medicalLeft }}%; width: {{ $medicalWidth }}%"></div>
 
                         <!-- 現在の時間を示すマーカー -->
                         @php
-                            $position = min(($this->careTime / 170) * 100, 100);
+                            $position = min(($this->careTime / $maxTime) * 100, 100);
                         @endphp
-                        <div class="absolute h-8 w-2 bg-red-500"
-                            style="left: {{ $position }}%; transform: translateX(-50%)"></div>
+                        <div class="absolute h-10 w-3 bg-black z-20" style="left: {{ $position }}%"></div>
 
                         <!-- 要介護度のラベル -->
-                        <div class="absolute -bottom-6 text-xs text-black" style="left: 10.7%">要支援1</div>
-                        <div class="absolute -bottom-6 text-xs text-black" style="left: 28.5%">要支援2</div>
-                        <div class="absolute -bottom-6 text-xs text-black" style="left: 42.9%">要介護1</div>
-                        <div class="absolute -bottom-6 text-xs text-black" style="left: 57.2%">要介護2</div>
-                        <div class="absolute -bottom-6 text-xs text-black" style="left: 71.5%">要介護3</div>
-                        <div class="absolute -bottom-6 text-xs text-black" style="left: 85.8%">要介護4</div>
-                        <div class="absolute -bottom-6 text-xs text-black" style="left: 96.5%">要介護5</div>
+                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800" style="left: 10.7%">要支援1</div>
+                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800" style="left: 28.5%">要支援2</div>
+                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800" style="left: 42.9%">要介護1</div>
+                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800" style="left: 57.2%">要介護2</div>
+                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800" style="left: 71.5%">要介護3</div>
+                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800" style="left: 85.8%">要介護4</div>
+                        <div class="absolute -bottom-6 text-sm font-medium text-blue-800 whitespace-nowrap"
+                            style="left: 96.5%">要介護5</div>
+                    </div>
+
+                    <!-- 行為区分の凡例 -->
+                    <div class="mt-10 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        <div class="flex items-center gap-2 ">
+                            <div class="w-5 h-5 bg-red-500 mr-2 rounded"></div>
+                            <span class="font-medium">食事: {{ number_format($mealTime, 1) }}分</span>
+                        </div>
+                        <div class="flex items-center gap-2 ">
+                            <div class="w-5 h-5 bg-purple-500 mr-2 rounded"></div>
+                            <span class="font-medium">排泄: {{ number_format($excretionTime, 1) }}分</span>
+                        </div>
+                        <div class="flex items-center gap-2 ">
+                            <div class="w-5 h-5 bg-blue-500 mr-2 rounded"></div>
+                            <span class="font-medium">移動: {{ number_format($movementTime, 1) }}分</span>
+                        </div>
+                        <div class="flex items-center gap-2 ">
+                            <div class="w-5 h-5 bg-teal-500 mr-2 rounded"></div>
+                            <span class="font-medium">清潔保持: {{ number_format($hygieneTime, 1) }}分</span>
+                        </div>
+                        <div class="flex items-center gap-2 ">
+                            <div class="w-5 h-5 bg-green-500 mr-2 rounded"></div>
+                            <span class="font-medium">間接: {{ number_format($indirectTime, 1) }}分</span>
+                        </div>
+                        <div class="flex items-center gap-2 ">
+                            <div class="w-5 h-5 bg-yellow-500 mr-2 rounded"></div>
+                            <span class="font-medium">BPSD関連: {{ number_format($bpsdTime, 1) }}分</span>
+                        </div>
+                        <div class="flex items-center gap-2 ">
+                            <div class="w-5 h-5 bg-orange-500 mr-2 rounded"></div>
+                            <span class="font-medium">機能訓練: {{ number_format($functionalTrainingTime, 1) }}分</span>
+                        </div>
+                        <div class="flex items-center gap-2 ">
+                            <div class="w-5 h-5 bg-lime-500 mr-2 rounded"></div>
+                            <span class="font-medium">医療関連: {{ number_format($medicalTime, 1) }}分</span>
+                        </div>
                     </div>
                 </div>
 
@@ -153,7 +256,8 @@ $backToInput = function () {
 
                     @foreach ($this->groups as $groupId => $groupName)
                         <div class="mb-6">
-                            <h5 class="font-medium text-gray-900 mb-2 p-1 bg-gray-100 rounded">{{ $groupName }}</h5>
+                            <h5 class="font-medium text-gray-900 mb-2 p-1 bg-gray-100 rounded">{{ $groupName }}
+                            </h5>
 
                             <div class="space-y-2 pl-4">
                                 @foreach ($this->questions as $questionId => $question)
