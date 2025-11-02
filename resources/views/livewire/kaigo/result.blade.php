@@ -213,22 +213,69 @@ $backToIndex = function () {
                         @endphp
 
                         <!-- 各行為区分の色分け表示 -->
-                        <div class="absolute h-10 bg-red-500" style="left: 0; width: {{ $mealWidth }}%"></div>
-                        <div class="absolute h-10 bg-purple-500"
-                            style="left: {{ $excretionLeft }}%; width: {{ $excretionWidth }}%"></div>
-                        <div class="absolute h-10 bg-blue-500"
-                            style="left: {{ $movementLeft }}%; width: {{ $movementWidth }}%"></div>
-                        <div class="absolute h-10 bg-teal-500"
-                            style="left: {{ $hygieneLeft }}%; width: {{ $hygieneWidth }}%"></div>
-                        <div class="absolute h-10 bg-green-500"
-                            style="left: {{ $indirectLeft }}%; width: {{ $indirectWidth }}%"></div>
-                        <div class="absolute h-10 bg-yellow-500"
-                            style="left: {{ $bpsdLeft }}%; width: {{ $bpsdWidth }}%"></div>
-                        <div class="absolute h-10 bg-orange-500"
-                            style="left: {{ $functionalTrainingLeft }}%; width: {{ $functionalTrainingWidth }}%">
+                        @php
+                            // 帯グラフ全体の幅を計算（合計時間のパーセンテージ）
+                            $totalWidth = min(($this->careTime / $maxTime) * 100, 100);
+
+                            // コンテナの幅に対する相対値に変換（ゼロ除算を防ぐ）
+                            if ($totalWidth > 0) {
+                                $mealWidthRelative = ($mealWidth / $totalWidth) * 100;
+                                $excretionLeftRelative = ($excretionLeft / $totalWidth) * 100;
+                                $excretionWidthRelative = ($excretionWidth / $totalWidth) * 100;
+                                $movementLeftRelative = ($movementLeft / $totalWidth) * 100;
+                                $movementWidthRelative = ($movementWidth / $totalWidth) * 100;
+                                $hygieneLeftRelative = ($hygieneLeft / $totalWidth) * 100;
+                                $hygieneWidthRelative = ($hygieneWidth / $totalWidth) * 100;
+                                $indirectLeftRelative = ($indirectLeft / $totalWidth) * 100;
+                                $indirectWidthRelative = ($indirectWidth / $totalWidth) * 100;
+                                $bpsdLeftRelative = ($bpsdLeft / $totalWidth) * 100;
+                                $bpsdWidthRelative = ($bpsdWidth / $totalWidth) * 100;
+                                $functionalTrainingLeftRelative = ($functionalTrainingLeft / $totalWidth) * 100;
+                                $functionalTrainingWidthRelative = ($functionalTrainingWidth / $totalWidth) * 100;
+                                $medicalLeftRelative = ($medicalLeft / $totalWidth) * 100;
+                                $medicalWidthRelative = ($medicalWidth / $totalWidth) * 100;
+                            } else {
+                                // $totalWidthが0の場合は、すべて0に設定
+                                $mealWidthRelative = 0;
+                                $excretionLeftRelative = 0;
+                                $excretionWidthRelative = 0;
+                                $movementLeftRelative = 0;
+                                $movementWidthRelative = 0;
+                                $hygieneLeftRelative = 0;
+                                $hygieneWidthRelative = 0;
+                                $indirectLeftRelative = 0;
+                                $indirectWidthRelative = 0;
+                                $bpsdLeftRelative = 0;
+                                $bpsdWidthRelative = 0;
+                                $functionalTrainingLeftRelative = 0;
+                                $functionalTrainingWidthRelative = 0;
+                                $medicalLeftRelative = 0;
+                                $medicalWidthRelative = 0;
+                            }
+                        @endphp
+                        <div class="absolute h-10 left-0 top-0 overflow-hidden animate-bar-expand"
+                            style="width: {{ $totalWidth }}%;">
+                            <div class="absolute h-10 bg-red-500" style="left: 0; width: {{ $mealWidthRelative }}%">
+                            </div>
+                            <div class="absolute h-10 bg-purple-500"
+                                style="left: {{ $excretionLeftRelative }}%; width: {{ $excretionWidthRelative }}%">
+                            </div>
+                            <div class="absolute h-10 bg-blue-500"
+                                style="left: {{ $movementLeftRelative }}%; width: {{ $movementWidthRelative }}%">
+                            </div>
+                            <div class="absolute h-10 bg-teal-500"
+                                style="left: {{ $hygieneLeftRelative }}%; width: {{ $hygieneWidthRelative }}%"></div>
+                            <div class="absolute h-10 bg-green-500"
+                                style="left: {{ $indirectLeftRelative }}%; width: {{ $indirectWidthRelative }}%">
+                            </div>
+                            <div class="absolute h-10 bg-yellow-500"
+                                style="left: {{ $bpsdLeftRelative }}%; width: {{ $bpsdWidthRelative }}%"></div>
+                            <div class="absolute h-10 bg-orange-500"
+                                style="left: {{ $functionalTrainingLeftRelative }}%; width: {{ $functionalTrainingWidthRelative }}%">
+                            </div>
+                            <div class="absolute h-10 bg-lime-500"
+                                style="left: {{ $medicalLeftRelative }}%; width: {{ $medicalWidthRelative }}%"></div>
                         </div>
-                        <div class="absolute h-10 bg-lime-500"
-                            style="left: {{ $medicalLeft }}%; width: {{ $medicalWidth }}%"></div>
 
 
 
