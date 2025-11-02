@@ -32,6 +32,22 @@ mount(function ($id = null) {
             $this->answers = $input->answers ?? [];
         }
     }
+
+    // 第7群の質問にデフォルト値を設定（既に回答がある場合は上書きしない）
+    $group7Questions = ['7-1', '7-2'];
+    foreach ($group7Questions as $questionId) {
+        if (!isset($this->answers[$questionId])) {
+            $this->answers[$questionId] = 'わからない';
+        }
+    }
+
+    // 第8群の質問にデフォルト値を設定（既に回答がある場合は上書きしない）
+    $group8Questions = ['8-1', '8-2', '8-3', '8-4', '8-5'];
+    foreach ($group8Questions as $questionId) {
+        if (!isset($this->answers[$questionId])) {
+            $this->answers[$questionId] = 'わからない';
+        }
+    }
 });
 
 /**
@@ -396,6 +412,22 @@ $backToIndex = function () {
                 <!-- 質問リスト -->
                 <div class="space-y-6">
                     @foreach ($this->currentGroupQuestions as $questionId => $question)
+                        @if ($questionId === '7-1' && $this->currentGroup === 7)
+                            <!-- 日常生活自立度（調査員）セクションの最初の質問に説明文を追加 -->
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                                <p class="text-sm text-gray-700">
+                                    下記の2つの項目は主治医の先生や認定調査員に確認して入力して下さい｡
+                                </p>
+                            </div>
+                        @endif
+                        @if ($questionId === '8-1' && $this->currentGroup === 8)
+                            <!-- 主治医意見書（調査員）セクションの最初の質問に説明文を追加 -->
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                                <p class="text-sm text-gray-700">
+                                    下記の5つの項目は主治医意見書を元に入力して下さい｡
+                                </p>
+                            </div>
+                        @endif
                         <div class="border p-4 rounded-lg bg-gray-50">
                             <h4 class="font-medium text-gray-900 mb-2 p-2 bg-gray-200 rounded">{{ $questionId }}
                                 {{ $question['title'] }}</h4>

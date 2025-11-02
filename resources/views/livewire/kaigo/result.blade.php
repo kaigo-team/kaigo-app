@@ -358,6 +358,14 @@ $backToIndex = function () {
                         一覧画面に戻る
                     </button>
                 </div>
+
+                <!-- 免責事項 -->
+                <div class="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                    <p class="text-sm text-gray-700">
+                        シミュレーターの診断結果はあくまで目安となります。<br>
+                        診断結果を保障するものではありません。
+                    </p>
+                </div>
             </div>
         </div>
     </div>

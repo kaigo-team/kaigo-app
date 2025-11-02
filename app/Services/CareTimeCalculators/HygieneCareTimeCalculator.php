@@ -78,7 +78,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
                     $visionAnswer = $answers['1-12'];
 
-                    if ($visionAnswer === '普通（日常生活に支障がない）' || $visionAnswer === '約1m離れた視力確認表の図が見える') {
+                    if ($visionAnswer === '生活に支障がない' || $visionAnswer === '約1m離れた視力確認表の図が見える') {
                         // 精神・行動障害の中間得点を計算
                         $mentalScore = $this->calculateMentalBehaviorDisorderScore($answers);
 
@@ -114,7 +114,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
             $outingAnswer = $answers['2-12'];
 
-            if ($outingAnswer === '週1回以上' || $outingAnswer === '月1回以上') {
+            if ($outingAnswer === '週1回以上ある' || $outingAnswer === '月1回以上ある') {
                 // 項目3-1意思の伝達の回答をチェック
                 if (!isset($answers['3-1'])) {
                     return 1.2;
@@ -122,7 +122,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
                 $communicationAnswer = $answers['3-1'];
 
-                if ($communicationAnswer === '調査対象者が意思を他者に伝達できる') {
+                if ($communicationAnswer === '意思を伝達できる') {
                     return 10.9;
                 } else {
                     return 8.0;
@@ -166,7 +166,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
                 $transferAnswer = $answers['2-1'];
 
-                if ($transferAnswer === '自立（介助なし）') {
+                if ($transferAnswer === 'できる') {
                     // 項目3-1意思の伝達の回答をチェック
                     if (!isset($answers['3-1'])) {
                         return 1.2;
@@ -174,7 +174,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
                     $communicationAnswer = $answers['3-1'];
 
-                    if ($communicationAnswer === '調査対象者が意思を他者に伝達できる') {
+                    if ($communicationAnswer === '意思を伝達できる') {
                         return 4.7;
                     } else {
                         return 3.0;
@@ -192,7 +192,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
             $communicationAnswer = $answers['3-1'];
 
-            if ($communicationAnswer === '調査対象者が意思を他者に伝達できる') {
+            if ($communicationAnswer === '意思を伝達できる') {
                 // 生活機能の中間得点を計算
                 $lifeFunctionScore = $this->calculateLifeFunctionScore($answers);
 
@@ -210,7 +210,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
                     $singleLegStandingAnswer = $answers['1-9'];
 
-                    if ($singleLegStandingAnswer === '支えなしでできる' || $singleLegStandingAnswer === '何か支えがあればできる') {
+                    if ($singleLegStandingAnswer === 'つかまらないでできる' || $singleLegStandingAnswer === '何かにつかまればできる') {
                         return 7.7;
                     } else {
                         return 5.8;
@@ -229,7 +229,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
                     $mealAnswer = $answers['2-4'];
 
-                    if ($mealAnswer === '自立（介助なし）') {
+                    if ($mealAnswer === 'できる') {
                         return 6.7;
                     } else {
                         // 精神・行動障害の中間得点を計算
@@ -245,7 +245,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
                             $visionAnswer = $answers['1-12'];
 
-                            if ($visionAnswer === '普通（日常生活に支障がない）') {
+                            if ($visionAnswer === '生活に支障がない') {
                                 // 精神・行動障害の中間得点を計算
                                 $mentalScore = $this->calculateMentalBehaviorDisorderScore($answers);
 
@@ -281,7 +281,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
         $transferAnswer = $answers['2-1'];
 
-        if ($transferAnswer === '自立（介助なし）') {
+        if ($transferAnswer === 'できる') {
             // 項目5-2金銭の管理の回答をチェック
             if (!isset($answers['5-2'])) {
                 return 1.2;
@@ -289,7 +289,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
             $moneyAnswer = $answers['5-2'];
 
-            if ($moneyAnswer === '自立（介助なし）' || $moneyAnswer === '一部介助') {
+            if ($moneyAnswer === 'できる' || $moneyAnswer === '少し手を借りればできる') {
                 // 項目2-11ズボン等の着脱の回答をチェック
                 if (!isset($answers['2-11'])) {
                     return 1.2;
@@ -297,7 +297,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
                 $clothingAnswer = $answers['2-11'];
 
-                if ($clothingAnswer === '自立（介助なし）') {
+                if ($clothingAnswer === 'できる') {
                     // 社会生活への適応の中間得点を計算
                     $socialScore = $this->calculateSocialAdaptationScore($answers);
 
@@ -328,7 +328,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
                 $oralCareAnswer = $answers['2-7'];
 
-                if ($oralCareAnswer === '自立（介助なし）' || $oralCareAnswer === '一部介助') {
+                if ($oralCareAnswer === 'できる' || $oralCareAnswer === '少し手を借りればできる') {
                     // 身体機能・起居動作の中間得点を計算
                     $physicalScore = $this->calculatePhysicalFunctionScore($answers);
 
@@ -350,7 +350,7 @@ class HygieneCareTimeCalculator extends BaseCareTimeCalculator
 
                             $transferAnswer = $answers['2-1'];
 
-                            if ($transferAnswer === '見守り等') {
+                            if ($transferAnswer === 'できるが不安') {
                                 return 4.5;
                             } else {
                                 // 項目2-2移動の回答がどの場合でも同じロジック（ルールファイルに値が記載されていない）
