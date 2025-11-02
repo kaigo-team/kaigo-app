@@ -17,4 +17,11 @@ ENV LOG_CHANNEL stderr
 # Allow composer to run as root
 ENV COMPOSER_ALLOW_SUPERUSER 1
 
+
+RUN apk update
+
+# Install the `npm` package
+RUN apk add --no-cache npm
+
+
 CMD ["/start.sh"]
