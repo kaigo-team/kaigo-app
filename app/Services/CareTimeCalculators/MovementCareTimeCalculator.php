@@ -51,7 +51,7 @@ class MovementCareTimeCalculator extends BaseCareTimeCalculator
 
                 $hearingAnswer = $answers['1-13'];
 
-                if ($hearingAnswer === '普通' || $hearingAnswer === '普通の声がやっと聴き取れる') {
+                if ($hearingAnswer === '生活に支障がない' || $hearingAnswer === '普通の声がやっと聴き取れる') {
                     return 10.4;
                 } else {
                     // 身体機能・起居動作の中間得点を計算
@@ -73,7 +73,7 @@ class MovementCareTimeCalculator extends BaseCareTimeCalculator
 
             $movementAnswer = $answers['2-2'];
 
-            if ($movementAnswer === '自立（介助なし）' || $movementAnswer === '見守り等') {
+            if ($movementAnswer === 'できる' || $movementAnswer === 'できるが不安') {
                 if ($lifeFunctionScore <= 43.7) {
                     return 14.6;
                 } else {
@@ -92,7 +92,7 @@ class MovementCareTimeCalculator extends BaseCareTimeCalculator
 
                         $transferAnswer = $answers['2-1'];
 
-                        if ($transferAnswer === '自立（介助なし）' || $transferAnswer === '見守り等') {
+                        if ($transferAnswer === 'できる' || $transferAnswer === 'できるが不安') {
                             return 7.6;
                         } else {
                             return 11.1;
@@ -136,7 +136,7 @@ class MovementCareTimeCalculator extends BaseCareTimeCalculator
 
                             $bathingAnswer = $answers['1-10'];
 
-                            if ($bathingAnswer === '自立（介助なし）' || $bathingAnswer === '一部介助') {
+                            if ($bathingAnswer === 'できる' || $bathingAnswer === '少し手を借りればできる') {
                                 return 15.2;
                             } else {
                                 return 17.2;
@@ -180,7 +180,7 @@ class MovementCareTimeCalculator extends BaseCareTimeCalculator
 
                                 $mealAnswer = $answers['2-4'];
 
-                                if ($mealAnswer === '自立（介助なし）' || $mealAnswer === '見守り等') {
+                                if ($mealAnswer === 'できる' || $mealAnswer === 'できるが不安') {
                                     return 19.1;
                                 } else {
                                     // 項目1-1麻痺の回答をチェック
@@ -228,7 +228,7 @@ class MovementCareTimeCalculator extends BaseCareTimeCalculator
 
             $bowelMovementAnswer = $answers['2-6'];
 
-            if ($bowelMovementAnswer === '自立（介助なし）' || $bowelMovementAnswer === '見守り等') {
+            if ($bowelMovementAnswer === 'できる' || $bowelMovementAnswer === 'できるが不安') {
                 // 項目3-4短期記憶の回答をチェック
                 if (!isset($answers['3-4'])) {
                     return 0.4;
@@ -247,7 +247,7 @@ class MovementCareTimeCalculator extends BaseCareTimeCalculator
 
                 $transferAnswer = $answers['2-1'];
 
-                if ($transferAnswer === '自立（介助なし）') {
+                if ($transferAnswer === 'できる') {
                     return 8.2;
                 } else {
                     // 項目1-1麻痺の回答をチェック
@@ -273,7 +273,7 @@ class MovementCareTimeCalculator extends BaseCareTimeCalculator
 
             $movementAnswer = $answers['2-2'];
 
-            if ($movementAnswer === '自立（介助なし）') {
+            if ($movementAnswer === 'できる') {
                 // 項目2-11ズボン等の着脱の回答をチェック
                 if (!isset($answers['2-11'])) {
                     return 0.4;
@@ -281,7 +281,7 @@ class MovementCareTimeCalculator extends BaseCareTimeCalculator
 
                 $clothingAnswer = $answers['2-11'];
 
-                if ($clothingAnswer === '自立（介助なし）' || $clothingAnswer === '見守り等') {
+                if ($clothingAnswer === 'できる' || $clothingAnswer === 'できるが不安') {
                     // 認知機能の中間得点を計算
                     $cognitiveScore = $this->calculateCognitiveFunctionScore($answers);
 

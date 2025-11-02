@@ -25,12 +25,12 @@ class MealCareTimeCalculator extends BaseCareTimeCalculator
 
         $mealAnswer = $answers['2-4'];
 
-        // 食事摂取が「自立（介助なし）」または「見守り等」の場合
-        if ($mealAnswer === '自立（介助なし）' || $mealAnswer === '見守り等') {
+        // 食事摂取が「できる」または「できるが不安」の場合
+        if ($mealAnswer === 'できる' || $mealAnswer === 'できるが不安') {
             return $this->calculateForIndependent($answers);
         }
-        // 食事摂取が「一部介助」または「全介助」の場合
-        elseif ($mealAnswer === '一部介助' || $mealAnswer === '全介助') {
+        // 食事摂取が「少し手を借りればできる」または「食べさせてもらっている」の場合
+        elseif ($mealAnswer === '少し手を借りればできる' || $mealAnswer === '食べさせてもらっている') {
             return $this->calculateForAssisted($answers);
         }
 
@@ -72,7 +72,7 @@ class MealCareTimeCalculator extends BaseCareTimeCalculator
 
             $movementAnswer = $answers['2-2'];
 
-            if ($movementAnswer === '自立（介助なし）' || $movementAnswer === '見守り等') {
+            if ($movementAnswer === 'できる' || $movementAnswer === 'できるが不安') {
                 // 項目3-4短期記憶の回答をチェック
                 if (!isset($answers['3-4'])) {
                     return 1.1;
@@ -88,7 +88,7 @@ class MealCareTimeCalculator extends BaseCareTimeCalculator
 
                     $outingAnswer = $answers['2-12'];
 
-                    if ($outingAnswer === '週1回以上' || $outingAnswer === '月1回以上') {
+                    if ($outingAnswer === '週1回以上ある' || $outingAnswer === '月1回以上ある') {
                         return 10.1;
                     } else {
                         if ($lifeFunctionScore <= 48.6) {
@@ -135,7 +135,7 @@ class MealCareTimeCalculator extends BaseCareTimeCalculator
 
         $swallowingAnswer = $answers['2-3'];
 
-        if ($swallowingAnswer === 'できる' || $swallowingAnswer === '見守り等') {
+        if ($swallowingAnswer === 'できる' || $swallowingAnswer === 'むせこむ事がある') {
             // 生活機能の中間得点を計算
             $lifeFunctionScore = $this->calculateLifeFunctionScore($answers);
 
@@ -157,7 +157,7 @@ class MealCareTimeCalculator extends BaseCareTimeCalculator
 
                         $visionAnswer = $answers['1-12'];
 
-                        if ($visionAnswer === '普通（日常生活に支障がない）') {
+                        if ($visionAnswer === '生活に支障がない') {
                             return 65.9;
                         } else {
                             return 56.0;
@@ -174,7 +174,7 @@ class MealCareTimeCalculator extends BaseCareTimeCalculator
 
                 $oralCareAnswer = $answers['2-7'];
 
-                if ($oralCareAnswer === '自立（介助なし）' || $oralCareAnswer === '一部介助') {
+                if ($oralCareAnswer === 'できる' || $oralCareAnswer === '少し手を借りればできる') {
                     if ($lifeFunctionScore >= 35.4) {
                         return 21.6;
                     } else {

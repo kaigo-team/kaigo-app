@@ -120,7 +120,7 @@ class FunctionalTrainingCareTimeCalculator extends BaseCareTimeCalculator
 
                     $nailAnswer = $answers['1-11'];
 
-                    if ($nailAnswer === '自立（介助なし）' || $nailAnswer === '一部介助') {
+                    if ($nailAnswer === 'できる' || $nailAnswer === '少し手を借りればできる') {
                         return 6.1;
                     } else {
                         return 4.5;
@@ -150,7 +150,7 @@ class FunctionalTrainingCareTimeCalculator extends BaseCareTimeCalculator
 
                     $urinationAnswer = $answers['2-5'];
 
-                    if ($urinationAnswer === '自立（介助なし）' || $urinationAnswer === '見守り等') {
+                    if ($urinationAnswer === 'できる' || $urinationAnswer === 'できるが不安') {
                         return 7.6;
                     } else {
                         return 6.0;
@@ -192,7 +192,7 @@ class FunctionalTrainingCareTimeCalculator extends BaseCareTimeCalculator
 
             if ($swallowingAnswer === 'できる') {
                 return $this->calculateForSwallowing($answers);
-            } elseif ($swallowingAnswer === '見守り等') {
+            } elseif ($swallowingAnswer === 'できるが不安') {
                 return $this->calculateForSwallowingWatch($answers);
             } else {
                 // 項目2-3えん下が「できない」の場合
@@ -232,7 +232,7 @@ class FunctionalTrainingCareTimeCalculator extends BaseCareTimeCalculator
 
             $medicationAnswer = $answers['5-1'];
 
-            if ($medicationAnswer === '自立（介助なし）' || $medicationAnswer === '一部介助') {
+            if ($medicationAnswer === 'できる' || $medicationAnswer === '少し手を借りればできる') {
                 // 認知機能の中間得点を計算
                 $cognitiveScore = $this->calculateCognitiveFunctionScore($answers);
 
@@ -269,7 +269,7 @@ class FunctionalTrainingCareTimeCalculator extends BaseCareTimeCalculator
 
                         $transferAnswer = $answers['2-1'];
 
-                        if ($transferAnswer === '自立（介助なし）' || $transferAnswer === '見守り等') {
+                        if ($transferAnswer === 'できる' || $transferAnswer === 'できるが不安') {
                             return 5.1;
                         } else {
                             return 10.5;
@@ -311,7 +311,7 @@ class FunctionalTrainingCareTimeCalculator extends BaseCareTimeCalculator
 
             $communicationAnswer = $answers['3-1'];
 
-            if ($communicationAnswer === '調査対象者が意思を他者に伝達できる' || 
+            if ($communicationAnswer === '意思を伝達できる' || 
                 $communicationAnswer === 'ときどき伝達できる' || 
                 $communicationAnswer === 'ほとんど伝達できない') {
                 if ($decisionAnswer === 'できる' || $decisionAnswer === '特別な場合を除いてできる') {
@@ -402,7 +402,7 @@ class FunctionalTrainingCareTimeCalculator extends BaseCareTimeCalculator
 
                     $visionAnswer = $answers['1-12'];
 
-                    if ($visionAnswer === '普通（日常生活に支障がない）') {
+                    if ($visionAnswer === '生活に支障がない') {
                         // 精神・行動障害の中間得点を計算
                         $mentalScore = $this->calculateMentalBehaviorDisorderScore($answers);
 

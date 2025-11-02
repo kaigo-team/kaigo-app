@@ -44,7 +44,7 @@ class ExcretionCareTimeCalculator extends BaseCareTimeCalculator
 
         $movementAnswer = $answers['2-2'];
 
-        if ($movementAnswer === '自立（介助なし）' || $movementAnswer === '見守り等') {
+        if ($movementAnswer === 'できる' || $movementAnswer === 'できるが不安') {
             return $this->calculateForIndependentMovement($answers);
         } else {
             // 項目2-2移動が「一部介助」or「全介助」の場合
@@ -67,7 +67,7 @@ class ExcretionCareTimeCalculator extends BaseCareTimeCalculator
 
         $bowelMovementAnswer = $answers['2-6'];
 
-        if ($bowelMovementAnswer === '自立（介助なし）' || $bowelMovementAnswer === '見守り等' || $bowelMovementAnswer === '一部介助') {
+        if ($bowelMovementAnswer === 'できる' || $bowelMovementAnswer === 'できるが不安' || $bowelMovementAnswer === '少し手を借りればできる') {
             // 認知機能の中間得点を計算
             $cognitiveScore = $this->calculateCognitiveFunctionScore($answers);
 
@@ -85,7 +85,7 @@ class ExcretionCareTimeCalculator extends BaseCareTimeCalculator
 
             $oralCareAnswer = $answers['2-7'];
 
-            if ($oralCareAnswer === '自立（介助なし）' || $oralCareAnswer === '一部介助') {
+            if ($oralCareAnswer === 'できる' || $oralCareAnswer === '少し手を借りればできる') {
                 return 19.1;
             } else {
                 // 項目2-7口腔清潔が「全介助」の場合
@@ -233,7 +233,7 @@ class ExcretionCareTimeCalculator extends BaseCareTimeCalculator
 
             $standingAnswer = $answers['1-6'];
 
-            if ($standingAnswer === '支えなしでできる' || $standingAnswer === '何か支えがあればできる') {
+            if ($standingAnswer === 'つかまらないでできる' || $standingAnswer === '何かにつかまればできる') {
                 if ($physicalScore <= 55.0) {
                     return 24.5;
                 } else {
@@ -267,7 +267,7 @@ class ExcretionCareTimeCalculator extends BaseCareTimeCalculator
 
                             $visionAnswer = $answers['1-12'];
 
-                            if ($visionAnswer === '普通（日常生活に支障がない）') {
+                            if ($visionAnswer === '生活に支障がない') {
                                 return 19.7;
                             } else {
                                 return 18.4;
@@ -299,7 +299,7 @@ class ExcretionCareTimeCalculator extends BaseCareTimeCalculator
 
         $bowelMovementAnswer = $answers['2-6'];
 
-        if ($bowelMovementAnswer === '自立（介助なし）' || $bowelMovementAnswer === '見守り等') {
+        if ($bowelMovementAnswer === 'できる' || $bowelMovementAnswer === 'できるが不安') {
             return $this->calculateForIndependentBowel($answers, $lifeFunctionScore);
         } else {
             // 項目2-6排便が「一部介助」or「全介助」の場合
@@ -324,7 +324,7 @@ class ExcretionCareTimeCalculator extends BaseCareTimeCalculator
 
             $standingAnswer = $answers['1-6'];
 
-            if ($standingAnswer === '支えなしでできる') {
+            if ($standingAnswer === 'つかまらないでできる') {
                 return 2.9;
             } else {
                 // 項目1-1麻痺の回答をチェック
@@ -369,7 +369,7 @@ class ExcretionCareTimeCalculator extends BaseCareTimeCalculator
 
         $clothingAnswer = $answers['2-11'];
 
-        if ($clothingAnswer === '自立（介助なし）' || $clothingAnswer === '見守り等') {
+        if ($clothingAnswer === 'できる' || $clothingAnswer === 'できるが不安') {
             return 8.3;
         } else {
             // 項目2-11ズボン等の着脱が「一部介助」or「全介助」の場合

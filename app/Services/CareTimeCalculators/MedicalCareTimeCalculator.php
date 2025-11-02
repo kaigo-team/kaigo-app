@@ -43,7 +43,7 @@ class MedicalCareTimeCalculator extends BaseCareTimeCalculator
 
         $swallowingAnswer = $answers['2-3'];
 
-        if ($swallowingAnswer === 'できる' || $swallowingAnswer === '見守り等') {
+        if ($swallowingAnswer === 'できる' || $swallowingAnswer === 'できるが不安') {
             return $this->calculateForSwallowing($answers);
         } else {
             // 項目2-3えん下が「できない」の場合
@@ -119,7 +119,7 @@ class MedicalCareTimeCalculator extends BaseCareTimeCalculator
 
         $movementAnswer = $answers['2-2'];
 
-        if ($movementAnswer === '自立（介助なし）' || $movementAnswer === '見守り等') {
+        if ($movementAnswer === 'できる' || $movementAnswer === 'できるが不安') {
             return $this->calculateForIndependentMovement($answers);
         } else {
             // 項目2-2移動が「一部介助」or「全介助」の場合
@@ -142,7 +142,7 @@ class MedicalCareTimeCalculator extends BaseCareTimeCalculator
 
         $transferAnswer = $answers['2-1'];
 
-        if ($transferAnswer === '自立（介助なし）') {
+        if ($transferAnswer === 'できる') {
             // 項目1-8立ち上がりの回答をチェック
             if (!isset($answers['1-8'])) {
                 return 1.0;
@@ -160,7 +160,7 @@ class MedicalCareTimeCalculator extends BaseCareTimeCalculator
 
                 $outingAnswer = $answers['2-12'];
 
-                if ($outingAnswer === '週1回以上' || $outingAnswer === '月1回以上') {
+                if ($outingAnswer === '週1回以上ある' || $outingAnswer === '月1回以上ある') {
                     return 4.2;
                 } else {
                     // 社会生活への適応の中間得点を計算
@@ -241,7 +241,7 @@ class MedicalCareTimeCalculator extends BaseCareTimeCalculator
 
                 $singleLegStandingAnswer = $answers['1-9'];
 
-                if ($singleLegStandingAnswer === '支えなしでできる' || $singleLegStandingAnswer === '何か支えがあればできる') {
+                if ($singleLegStandingAnswer === 'つかまらないでできる' || $singleLegStandingAnswer === '何かにつかまればできる') {
                     return 4.4;
                 } else {
                     return 7.4;
@@ -280,7 +280,7 @@ class MedicalCareTimeCalculator extends BaseCareTimeCalculator
         $communicationAnswer = $answers['3-1'];
 
         if (
-            $communicationAnswer === '調査対象者が意思を他者に伝達できる' ||
+            $communicationAnswer === '意思を伝達できる' ||
             $communicationAnswer === 'ときどき伝達できる'
         ) {
             // 生活機能の中間得点を計算
@@ -345,9 +345,9 @@ class MedicalCareTimeCalculator extends BaseCareTimeCalculator
                     $mealAnswer = $answers['2-4'];
 
                     if (
-                        $mealAnswer === '自立（介助なし）' ||
-                        $mealAnswer === '見守り等' ||
-                        $mealAnswer === '一部介助'
+                        $mealAnswer === 'できる' ||
+                        $mealAnswer === 'できるが不安' ||
+                        $mealAnswer === '少し手を借りればできる'
                     ) {
                         // 精神・行動障害の中間得点を計算
                         $mentalScore = $this->calculateMentalBehaviorDisorderScore($answers);
@@ -389,7 +389,7 @@ class MedicalCareTimeCalculator extends BaseCareTimeCalculator
         $visionAnswer = $answers['1-12'];
 
         if (
-            $visionAnswer === '普通（日常生活に支障がない）' ||
+            $visionAnswer === '生活に支障がない' ||
             $visionAnswer === '約1m離れた視力確認表の図が見える'
         ) {
             // 精神・行動障害の中間得点を計算

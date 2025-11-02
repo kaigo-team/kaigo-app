@@ -52,7 +52,7 @@ class BPSDCareTimeCalculator extends BaseCareTimeCalculator
             $communicationAnswer = $answers['3-1'];
 
             if (
-                $communicationAnswer === '調査対象者が意思を他者に伝達できる' ||
+                $communicationAnswer === '意思を伝達できる' ||
                 $communicationAnswer === 'ときどき伝達できる' ||
                 $communicationAnswer === 'ほとんど伝達できない'
             ) {
@@ -148,7 +148,7 @@ class BPSDCareTimeCalculator extends BaseCareTimeCalculator
             $communicationAnswer = $answers['3-1'];
 
             if (
-                $communicationAnswer === '調査対象者が意思を他者に伝達できる' ||
+                $communicationAnswer === '意思を伝達できる' ||
                 $communicationAnswer === 'ときどき伝達できる' ||
                 $communicationAnswer === 'ほとんど伝達できない'
             ) {
@@ -220,7 +220,7 @@ class BPSDCareTimeCalculator extends BaseCareTimeCalculator
 
                     $oralCareAnswer = $answers['2-7'];
 
-                    if ($oralCareAnswer === '自立（介助なし）') {
+                    if ($oralCareAnswer === 'できる') {
                         return 5.8;
                     } else {
                         // 項目1-7歩行の回答をチェック
