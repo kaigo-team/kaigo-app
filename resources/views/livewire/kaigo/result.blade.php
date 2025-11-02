@@ -135,14 +135,33 @@ $backToIndex = function () {
                 <!-- 要介護度の帯グラフ -->
                 <div class="mt-6">
                     <h4 class="text-base font-medium text-blue-700 mb-3">要介護認定基準時間</h4>
-                    <div class="relative h-10  border border-gray-300 shadow-sm">
+                    <div class="relative h-10 border border-gray-300 shadow-sm">
+                        @php
+                            // 要介護度の判定基準（分）
+                            $maxTime = 170;
+                            $nonApplicableEnd = 25; // 非該当: 25分未満
+                            $support1End = 32; // 要支援1: 25分以上32分未満
+                            $support2End = 50; // 要支援2・要介護1: 32分以上50分未満
+                            $care1End = 70; // 要介護2: 50分以上70分未満
+                            $care2End = 90; // 要介護3: 70分以上90分未満
+                            $care3End = 110; // 要介護4: 90分以上110分未満
+                            // 要介護5: 110分以上
+
+                            // 境界線の位置を計算（%）
+                            $boundary1 = ($nonApplicableEnd / $maxTime) * 100; // 25分 = 14.7%
+                            $boundary2 = ($support1End / $maxTime) * 100; // 32分 = 18.8%
+                            $boundary3 = ($support2End / $maxTime) * 100; // 50分 = 29.4%
+                            $boundary4 = ($care1End / $maxTime) * 100; // 70分 = 41.2%
+                            $boundary5 = ($care2End / $maxTime) * 100; // 90分 = 52.9%
+                            $boundary6 = ($care3End / $maxTime) * 100; // 110分 = 64.7%
+                        @endphp
                         <!-- 各要介護度の境界線 -->
-                        <div class="absolute h-full w-px bg-gray-400 z-10" style="left: 21.3%"></div>
-                        <div class="absolute h-full w-px bg-gray-400 z-10" style="left: 35.7%"></div>
-                        <div class="absolute h-full w-px bg-gray-400 z-10" style="left: 50%"></div>
-                        <div class="absolute h-full w-px bg-gray-400 z-10" style="left: 64.3%"></div>
-                        <div class="absolute h-full w-px bg-gray-400 z-10" style="left: 78.6%"></div>
-                        <div class="absolute h-full w-px bg-gray-400 z-10" style="left: 92.9%"></div>
+                        <div class="absolute h-10 w-1 bg-gray-600 z-10" style="left: {{ $boundary1 }}%"></div>
+                        <div class="absolute h-10 w-1 bg-gray-600 z-10" style="left: {{ $boundary2 }}%"></div>
+                        <div class="absolute h-10 w-1 bg-gray-600 z-10" style="left: {{ $boundary3 }}%"></div>
+                        <div class="absolute h-10 w-1 bg-gray-600 z-10" style="left: {{ $boundary4 }}%"></div>
+                        <div class="absolute h-10 w-1 bg-gray-600 z-10" style="left: {{ $boundary5 }}%"></div>
+                        <div class="absolute h-10 w-1 bg-gray-600 z-10" style="left: {{ $boundary6 }}%"></div>
 
                         <!-- 各行為区分の色分け表示 -->
                         @php
@@ -171,7 +190,7 @@ $backToIndex = function () {
 
                             // 合計時間（最大170分とする）
                             $totalTime = $this->careTime;
-                            $maxTime = 170;
+                            // $maxTimeは既に上で定義済み
 
                             // 各行為区分の幅を計算（%）
                             $mealWidth = ($mealTime / $maxTime) * 100;
@@ -194,44 +213,106 @@ $backToIndex = function () {
                         @endphp
 
                         <!-- 各行為区分の色分け表示 -->
-                        <div class="absolute h-10 bg-red-500" style="left: 0; width: {{ $mealWidth }}%"></div>
-                        <div class="absolute h-10 bg-purple-500"
-                            style="left: {{ $excretionLeft }}%; width: {{ $excretionWidth }}%"></div>
-                        <div class="absolute h-10 bg-blue-500"
-                            style="left: {{ $movementLeft }}%; width: {{ $movementWidth }}%"></div>
-                        <div class="absolute h-10 bg-teal-500"
-                            style="left: {{ $hygieneLeft }}%; width: {{ $hygieneWidth }}%"></div>
-                        <div class="absolute h-10 bg-green-500"
-                            style="left: {{ $indirectLeft }}%; width: {{ $indirectWidth }}%"></div>
-                        <div class="absolute h-10 bg-yellow-500"
-                            style="left: {{ $bpsdLeft }}%; width: {{ $bpsdWidth }}%"></div>
-                        <div class="absolute h-10 bg-orange-500"
-                            style="left: {{ $functionalTrainingLeft }}%; width: {{ $functionalTrainingWidth }}%">
-                        </div>
-                        <div class="absolute h-10 bg-lime-500"
-                            style="left: {{ $medicalLeft }}%; width: {{ $medicalWidth }}%"></div>
-
-                        <!-- 現在の時間を示すマーカー -->
                         @php
-                            $position = min(($this->careTime / $maxTime) * 100, 100);
+                            // 帯グラフ全体の幅を計算（合計時間のパーセンテージ）
+                            $totalWidth = min(($this->careTime / $maxTime) * 100, 100);
+
+                            // コンテナの幅に対する相対値に変換（ゼロ除算を防ぐ）
+                            if ($totalWidth > 0) {
+                                $mealWidthRelative = ($mealWidth / $totalWidth) * 100;
+                                $excretionLeftRelative = ($excretionLeft / $totalWidth) * 100;
+                                $excretionWidthRelative = ($excretionWidth / $totalWidth) * 100;
+                                $movementLeftRelative = ($movementLeft / $totalWidth) * 100;
+                                $movementWidthRelative = ($movementWidth / $totalWidth) * 100;
+                                $hygieneLeftRelative = ($hygieneLeft / $totalWidth) * 100;
+                                $hygieneWidthRelative = ($hygieneWidth / $totalWidth) * 100;
+                                $indirectLeftRelative = ($indirectLeft / $totalWidth) * 100;
+                                $indirectWidthRelative = ($indirectWidth / $totalWidth) * 100;
+                                $bpsdLeftRelative = ($bpsdLeft / $totalWidth) * 100;
+                                $bpsdWidthRelative = ($bpsdWidth / $totalWidth) * 100;
+                                $functionalTrainingLeftRelative = ($functionalTrainingLeft / $totalWidth) * 100;
+                                $functionalTrainingWidthRelative = ($functionalTrainingWidth / $totalWidth) * 100;
+                                $medicalLeftRelative = ($medicalLeft / $totalWidth) * 100;
+                                $medicalWidthRelative = ($medicalWidth / $totalWidth) * 100;
+                            } else {
+                                // $totalWidthが0の場合は、すべて0に設定
+                                $mealWidthRelative = 0;
+                                $excretionLeftRelative = 0;
+                                $excretionWidthRelative = 0;
+                                $movementLeftRelative = 0;
+                                $movementWidthRelative = 0;
+                                $hygieneLeftRelative = 0;
+                                $hygieneWidthRelative = 0;
+                                $indirectLeftRelative = 0;
+                                $indirectWidthRelative = 0;
+                                $bpsdLeftRelative = 0;
+                                $bpsdWidthRelative = 0;
+                                $functionalTrainingLeftRelative = 0;
+                                $functionalTrainingWidthRelative = 0;
+                                $medicalLeftRelative = 0;
+                                $medicalWidthRelative = 0;
+                            }
                         @endphp
-                        <div class="absolute h-10 w-3 bg-black z-20" style="left: {{ $position }}%"></div>
+                        <div class="absolute h-10 left-0 top-0 overflow-hidden animate-bar-expand"
+                            style="width: {{ $totalWidth }}%;">
+                            <div class="absolute h-10 bg-red-500" style="left: 0; width: {{ $mealWidthRelative }}%">
+                            </div>
+                            <div class="absolute h-10 bg-purple-500"
+                                style="left: {{ $excretionLeftRelative }}%; width: {{ $excretionWidthRelative }}%">
+                            </div>
+                            <div class="absolute h-10 bg-blue-500"
+                                style="left: {{ $movementLeftRelative }}%; width: {{ $movementWidthRelative }}%">
+                            </div>
+                            <div class="absolute h-10 bg-teal-500"
+                                style="left: {{ $hygieneLeftRelative }}%; width: {{ $hygieneWidthRelative }}%"></div>
+                            <div class="absolute h-10 bg-green-500"
+                                style="left: {{ $indirectLeftRelative }}%; width: {{ $indirectWidthRelative }}%">
+                            </div>
+                            <div class="absolute h-10 bg-yellow-500"
+                                style="left: {{ $bpsdLeftRelative }}%; width: {{ $bpsdWidthRelative }}%"></div>
+                            <div class="absolute h-10 bg-orange-500"
+                                style="left: {{ $functionalTrainingLeftRelative }}%; width: {{ $functionalTrainingWidthRelative }}%">
+                            </div>
+                            <div class="absolute h-10 bg-lime-500"
+                                style="left: {{ $medicalLeftRelative }}%; width: {{ $medicalWidthRelative }}%"></div>
+                        </div>
+
+
 
                         <!-- 要介護度のラベル -->
-                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
-                            style="left: 10.7%">要支援1</div>
-                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
-                            style="left: 28.5%">要支援2</div>
-                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
-                            style="left: 42.9%">要介護1</div>
-                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
-                            style="left: 57.2%">要介護2</div>
-                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
-                            style="left: 71.5%">要介護3</div>
-                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
-                            style="left: 85.8%">要介護4</div>
-                        <div class="absolute -bottom-6 text-xs font-light text-blue-800 whitespace-nowrap"
-                            style="left: 96.5%">要介護5</div>
+                        @php
+                            // 各区分の中央位置を計算
+                            $label1 = $boundary1 / 2; // 非該当の中央: 7.35%
+                            $label2 = ($boundary1 + $boundary2) / 2; // 要支援1の中央: 16.75%
+                            $label3 = ($boundary2 + $boundary3) / 2; // 要支援2・要介護1の中央: 24.1%
+                            $label4 = ($boundary3 + $boundary4) / 2; // 要介護2の中央: 35.3%
+                            $label5 = ($boundary4 + $boundary5) / 2; // 要介護3の中央: 47.05%
+                            $label6 = ($boundary5 + $boundary6) / 2; // 要介護4の中央: 58.8%
+                            $label7 = ($boundary6 + 100) / 2; // 要介護5の中央: 82.35%
+                        @endphp
+                        <div class="absolute font-light text-blue-800 whitespace-nowrap"
+                            style="left: {{ $label1 }}%; top: 100%; margin-top: 0.5rem; transform: translateX(-50%); font-size: 0.65rem;">
+                            非該当</div>
+                        <div class="absolute font-light text-blue-800 whitespace-nowrap"
+                            style="left: {{ $label2 }}%; top: 100%; margin-top: 0.5rem; transform: translateX(-50%); font-size: 0.65rem;">
+                            要支援1</div>
+                        <div class="absolute font-light text-blue-800 text-center"
+                            style="left: {{ $label3 }}%; top: 100%; margin-top: 0.5rem; transform: translateX(-50%); line-height: 1.3; font-size: 0.65rem;">
+                            <div>要支援2</div>
+                            <div style="margin-top: -0.1rem;">要介護1</div>
+                        </div>
+                        <div class="absolute font-light text-blue-800 whitespace-nowrap"
+                            style="left: {{ $label4 }}%; top: 100%; margin-top: 0.5rem; transform: translateX(-50%); font-size: 0.65rem;">
+                            要介護2</div>
+                        <div class="absolute font-light text-blue-800 whitespace-nowrap"
+                            style="left: {{ $label5 }}%; top: 100%; margin-top: 0.5rem; transform: translateX(-50%); font-size: 0.65rem;">
+                            要介護3</div>
+                        <div class="absolute font-light text-blue-800 whitespace-nowrap"
+                            style="left: {{ $label6 }}%; top: 100%; margin-top: 0.5rem; transform: translateX(-50%); font-size: 0.65rem;">
+                            要介護4</div>
+                        <div class="absolute font-light text-blue-800 whitespace-nowrap"
+                            style="left: {{ $label7 }}%; top: 100%; margin-top: 0.5rem; transform: translateX(-50%); font-size: 0.65rem;">
+                            要介護5</div>
                     </div>
 
                     <!-- 行為区分の凡例 -->
@@ -357,14 +438,6 @@ $backToIndex = function () {
                         class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                         一覧画面に戻る
                     </button>
-                </div>
-
-                <!-- 免責事項 -->
-                <div class="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                    <p class="text-sm text-gray-700">
-                        シミュレーターの診断結果はあくまで目安となります。<br>
-                        診断結果を保障するものではありません。
-                    </p>
                 </div>
             </div>
         </div>

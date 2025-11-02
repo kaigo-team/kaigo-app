@@ -52,7 +52,7 @@
 }
 
 [data-flux-label] {
-    @apply  !mb-0 !leading-tight;
+    @apply !mb-0 !leading-tight;
 }
 
 input:focus[data-flux-control],
@@ -64,3 +64,14 @@ select:focus[data-flux-control] {
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+/* 帯グラフが左から右に伸びるアニメーション */
+@keyframes bar-expand {
+    from {
+        width: 0;
+    }
+}
+
+.animate-bar-expand {
+    animation: bar-expand 1s ease-out forwards;
+}
