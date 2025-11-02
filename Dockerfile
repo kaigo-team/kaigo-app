@@ -1,6 +1,12 @@
 # richarvey/nginx-php-fpmをベースとする
 FROM richarvey/nginx-php-fpm:latest
 
+# Node.jsをインストール（Viteビルド用）
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY . .
 
 # Image config
